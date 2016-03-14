@@ -8,9 +8,9 @@ Run
 1. ```git clone https://github.com/etops/couchbase-cluster-setup.git```
 2. create ~/couchbase/node1 folders
 3. ```docker-compose up -d ``` (remove the -d to see log output)
-4. go to http://<ip>:8091 and verify running couchbase
+4. go to http://&lt;ip&gt;:8091 and verify running couchbase
 
-<ip> can be found with 
+&lt;ip&gt; can be found with 
 ```docker inspect couchbasesetup_couchbase-init_1 | grep IPAddress | cut -d '"' -f 4```
 
 
