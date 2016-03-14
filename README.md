@@ -11,7 +11,7 @@ Run
 4. go to http://&lt;ip&gt;:8091 and verify running couchbase
 
 &lt;ip&gt; can be found with 
-```docker inspect couchbasesetup_couchbase-init_1 | grep IPAddress | cut -d '"' -f 4```
+```docker inspect couchbaseclustersetup_couchbase-init_1 | grep IPAddress | cut -d '"' -f 4```
 
 
 Scale
