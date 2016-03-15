@@ -1,4 +1,4 @@
-FROM couchbase/server
+FROM couchbase/server:community-4.0.0
 
 MAINTAINER ETOPS AG
 
