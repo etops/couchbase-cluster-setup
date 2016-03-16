@@ -12,7 +12,7 @@ dependencies:
 
 test:
   override:
-    - docker run -d -p 8091:8091 $IMAGE_NAME; sleep 20
+    - docker run -d -p 8091:8091 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 20
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
 
 deployment:
