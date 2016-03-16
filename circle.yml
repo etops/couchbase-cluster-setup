@@ -1,26 +1,39 @@
 machine:
   services:
     - docker
+  environment:
+    DOCKER_PRIVATE_REPO: ${CIRCLE_PROJECT_USERNAME}
+    IMAGE_NAME: couchbase
 
 dependencies:
   override:
     - docker info
-    - docker build -t etops/couchbase .
+    - docker build -t $IMAGE_NAME .
 
 test:
   override:
-    - docker run -d -p 8091:8091 etops/couchbase; sleep 20
+    - docker run -d -p 8091:8091 $IMAGE_NAME; sleep 20
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
 
 deployment:
+  release:
+    tag: /[0-9]+(\.[0-9]+)*/
+    commands:
+      - docker tag -f $IMAGE_NAME:latest $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
+      - docker tag    $IMAGE_NAME:$CIRCLE_TAG $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
+      - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
   hub:
     branch: master
     commands:
+      - docker tag    $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-      - docker push etops/couchbase
+      - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
       
+
 notify:
   webhooks:
     # A list of hook hashes, containing the url field
     # gitter hook
-    - url: https://webhooks.gitter.im/e/bff8ccf0c23911fdeea1
+    - url: $GITTER_WEBHOOK
