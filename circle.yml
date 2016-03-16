@@ -8,7 +8,7 @@ machine:
 dependencies:
   override:
     - docker info
-    - docker build -t $IMAGE_NAME .
+    - docker build -t $IMAGE_NAME:$CIRCLE_BUILD_NUM .
 
 test:
   override:
@@ -19,8 +19,8 @@ deployment:
   release:
     tag: /[0-9]+(\.[0-9]+)*/
     commands:
-      - docker tag -f $IMAGE_NAME:latest $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
-      - docker tag    $IMAGE_NAME:$CIRCLE_TAG $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
+      - docker tag -f $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
+      - docker tag    $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
       - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
