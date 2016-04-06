@@ -5,6 +5,7 @@ MAINTAINER ETOPS AG
 ENV ADMIN_LOGIN=admin \
     ADMIN_PASSWORD=admin001*
 
+COPY couchbase-template.json /
 COPY init.sh /
 RUN chmod +x /init.sh
 ENTRYPOINT ["/init.sh"]

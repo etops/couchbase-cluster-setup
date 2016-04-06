@@ -1,0 +1,31 @@
+{
+    "template" : "*",
+    "order" : 10,
+    "mappings" : {
+        "couchbaseCheckpoint" : {
+            "_source" : {
+                "includes" : ["doc.*"]
+            },
+            "dynamic_templates": [
+                {
+                    "store_no_index": {
+                        "match": "*",
+                        "mapping": {
+                            "store" : "no",
+                            "index" : "no",
+                            "include_in_all" : false
+                        }
+                    }
+                }
+            ]
+        },
+        "_default_" : {
+            "properties" : {
+                "meta" : {
+                    "type" : "object",
+                    "include_in_all" : false
+                }
+            }
+        }
+    }
+}
