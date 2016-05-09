@@ -50,26 +50,13 @@ else
     
     # create bucket data
     couchbase-cli bucket-create -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=default --bucket-type=couchbase --bucket-ramsize=256 --wait --services=data,index,query
+    # create bucket for query suggester
+    couchbase-cli bucket-create -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=query --bucket-type=couchbase --bucket-ramsize=100 --wait --services=data,index,query
     
     #create bucket cache
     couchbase-cli bucket-create -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=cache --bucket-type=memcached --bucket-ramsize=256 --wait --services=data,index,query
 
-    # configure and launch xdcr to sync with elastic
-    # couchbase-cli setting-xdcr -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --max-concurrent-reps=8
-    # couchbase-cli xdcr-setup -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
-    #        --create \
-    #        --xdcr-cluster-name=ElasticCouchbase \
-    #        --xdcr-hostname=elastic-couchbase:9091 \
-    #        --xdcr-username=$ADMIN_LOGIN \
-    #        --xdcr-password=$ADMIN_PASSWORD
-    #couchbase-cli xdcr-replicate -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
-    #        --xdcr-cluster-name=ElasticCouchbase \
-    #        --xdcr-from-bucket=data \
-    #        --xdcr-to-bucket=data \
-    #        --xdcr-replication-mode=capi
-    
-    
-    
+   
     # Rebalancing could also be done here, but then a killed container doesn't rebalance automatically
     # wait for other node to connect to the cluster
     #sleep 10
