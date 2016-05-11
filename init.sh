@@ -1,4 +1,14 @@
 #!/bin/bash
+#
+# This script configures the couchbase cluster for running.
+# 
+# It uses the couchbase command line tool, docs here:
+# http://developer.couchbase.com/documentation/server/current/cli/cbcli-intro.html
+#
+# Which buckets, how much RAM -- necessary docs are in Sizing Guidelines
+# http://developer.couchbase.com/documentation/server/current/install/sizing-general.html
+#
+#
 echo "starting ...."
 wait_for_start() {
     "$@"
@@ -10,22 +20,37 @@ wait_for_start() {
     done
 }
 
+HOST=127.0.0.1
+PORT=8091
+
+# Model bucket configuration options.
+# Give this one more memory, so it can cache 
+# more, faster access.
+MODEL_BUCKET=models
+MODEL_BUCKET_RAMSIZE=512
+
+# File bucket configuration options.
+# Memory can be much lower because it's not important to 
+# keep a resident set in memory for fast query/access.
+FILE_BUCKET=files
+FILE_BUCKET_RAMSIZE=128
+
 # if this node should reach an existing server (a couchbase link is defined)  => env is set by docker compose link
 if [ -n "${COUCHBASE_NAME:+1}" ]; then
 
-    echo "add node to  cluster"
+    echo "add node to cluster"
     # wait for couchbase clustering to be setup
-    wait_for_start couchbase-cli server-list -c couchbase:8091 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+    wait_for_start couchbase-cli server-list -c couchbase:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
     
     echo "launch couchbase"
     /entrypoint.sh couchbase-server &
 
     # wait for couchbase to be up (this is the local couchbase belonging to this container)
-    wait_for_start couchbase-cli server-info -c localhost:8091 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+    wait_for_start couchbase-cli server-info -c localhost:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
     
     # add this new node to the cluster
     ip=`hostname --ip-address`
-    #couchbase-cli server-add -c couchbase -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --server-add=$ip:8091 --server-add-username=$ADMIN_LOGIN --server-add-password=$ADMIN_PASSWORD
+    #couchbase-cli server-add -c couchbase -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --server-add=$ip:$PORT --server-add-username=$ADMIN_LOGIN --server-add-password=$ADMIN_PASSWORD
     
     echo "node added to cluster"
     
@@ -35,34 +60,118 @@ if [ -n "${COUCHBASE_NAME:+1}" ]; then
     echo "adding and rebalancing ..."
     
     # rebalance
-    couchbase-cli rebalance -c couchbase -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --server-add=$ip:8091 --server-add-username=$ADMIN_LOGIN --server-add-password=$ADMIN_PASSWORD --services=data,index,query
+    couchbase-cli rebalance -c couchbase \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        --server-add=$ip:$PORT \
+        --server-add-username=$ADMIN_LOGIN \
+        --server-add-password=$ADMIN_PASSWORD \
+        --services=data,index,query
 else
 
-    echo "launch couchbase"
+    echo "Launching Couchbase..."
     /entrypoint.sh couchbase-server &
 
     # wait for couchbase to be up
-    wait_for_start couchbase-cli server-info -c localhost:8091 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
-
-    echo "start initial cluster configuration"
+    wait_for_start couchbase-cli server-info -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+    
     # init the cluster
-    couchbase-cli cluster-init -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --cluster-init-username=${ADMIN_LOGIN} --cluster-init-password=${ADMIN_PASSWORD} --cluster-init-port=8091 --cluster-init-ramsize=${CLUSTER_RAM_QUOTA} --services=data,index,query
+    # Note that because we depend on the regular couchbase docker image this
+    # may not be strictly necessary.
+    echo "Initializing cluster configuration ..."
+    couchbase-cli cluster-edit -c $HOST \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        --cluster-username=${ADMIN_LOGIN} \
+        --cluster-password=${ADMIN_PASSWORD} \
+        --cluster-port=$PORT \
+        --cluster-ramsize=${CLUSTER_RAM_QUOTA} \
+        --services=data,index,query
     
-    # create bucket data
-    couchbase-cli bucket-create -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=default --bucket-type=couchbase --bucket-ramsize=256 --wait --services=data,index,query
-    # create bucket for query suggester
-    couchbase-cli bucket-create -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=query --bucket-type=couchbase --bucket-ramsize=100 --wait --services=data,index,query
-    
-    #create bucket cache
-    couchbase-cli bucket-create -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=cache --bucket-type=memcached --bucket-ramsize=256 --wait --services=data,index,query
+    # Create bucket for model data
+    echo "Creating bucket " $MODEL_BUCKET " ..."
+    couchbase-cli bucket-create -c $HOST \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        --bucket=$MODEL_BUCKET \
+        --bucket-type=couchbase \
+        --bucket-ramsize=$MODEL_BUCKET_RAMSIZE \
+        --wait \
+        --services=data,index,query
 
-   
+    # Set model bucket to be high priority
+    echo "Setting " $MODEL_BUCKET " bucket to be high priority..."
+    couchbase-cli bucket-edit -c $HOST \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        --bucket=$MODEL_BUCKET \
+        --bucket-priority=high
+
+    # Do not include index, query services because they 
+    # require memory and aren't needed.
+    echo "Creating bucket " $FILE_BUCKET " ..."
+    couchbase-cli bucket-create -c $HOST \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        --bucket=$FILE_BUCKET \
+        --bucket-type=couchbase \
+        --bucket-ramsize=$FILE_BUCKET_RAMSIZE \
+        --wait \
+        --services=data
+
+    echo "Setting " $FILE_BUCKET " bucket to be low priority..."
+    couchbase-cli bucket-edit -c $HOST \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        --bucket=$FILE_BUCKET \
+        --bucket-priority=low
+
+    echo "Deleting unused cache bucket (if present)..."
+    couchbase-cli bucket-delete -c $HOST \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        --bucket=cache
+
+    echo "Configuring index settings..."
+    couchbase-cli setting-index -c $HOST \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        --index-max-rollback-points=5 \
+        --index-memory-snapshot-interval=200 \
+        --index-threads=2          
+
+    # For debug purposes in logs, show buckets.
+    echo "Inspecting bucket list..."
+    couchbase-cli bucket-list -c $HOST \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+
+    # Email alerts (not used, TBD)
+    # http://developer.couchbase.com/documentation/server/current/cli/cbcli/setting-alert.html
+    # couchbase-cli setting-alert -c $HOST \
+    #     -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+    #     --enable-email-alert=1 \
+    #     --email-recipients=devops@etops.ch,software@etops.ch \
+    #     --email-sender=SENDER \
+    #     --email-user=USER \
+    #     --email-password=PWD \
+    #     --email-host=HOST \
+    #     --email-port=PORT \
+    #     --enable-email-encrypt=0 \
+    #     --alert-auto-failover-node \
+    #     --alert-auto-failover-max-reached \
+    #     --alert-auto-failover-node-down \
+    #     --alert-auto-failover-cluster-small \
+    #     --alert-auto-failover-disabled \
+    #     --alert-ip-changed \
+    #     --alert-disk-space \
+    #     --alert-meta-overhead \
+    #     --alert-meta-oom \
+    #     --alert-write-failed
+
+    # create bucket cache
+    # as yet is unused and couchbase may come up and be ready faster without this
+    # couchbase-cli bucket-create -c $HOST -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=cache --bucket-type=memcached --bucket-ramsize=256 --wait --services=data,index,query
+
     # Rebalancing could also be done here, but then a killed container doesn't rebalance automatically
     # wait for other node to connect to the cluster
     #sleep 10
     
     # rebalance
-    # couchbase-cli rebalance -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD    
+    # couchbase-cli rebalance -c $HOST -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+
+    echo "Finished with cluster setup/config."
 fi
         
 wait

@@ -89,4 +89,10 @@ run again:
 ```docker-compose up```
 
 
+Cluster Design Considerations
+---------------------------------
 
+[Couchbase guidance](http://blog.couchbase.com/10-things-developers-should-know-about-couchbase)
+suggests keeping number of total buckets to a minimum, ideally 5 or less, never more than 10.
+
+They recommend starting in one bucket and growing out as necessary.
