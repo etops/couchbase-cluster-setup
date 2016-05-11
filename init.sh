@@ -54,7 +54,8 @@ else
     couchbase-cli bucket-create -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=query --bucket-type=couchbase --bucket-ramsize=100 --wait --services=data,index,query
     
     #create bucket cache
-    couchbase-cli bucket-create -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=cache --bucket-type=memcached --bucket-ramsize=256 --wait --services=data,index,query
+#as yet is unused and couchbase may come up and be ready faster without this
+#    couchbase-cli bucket-create -c 127.0.0.1 -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --bucket=cache --bucket-type=memcached --bucket-ramsize=256 --wait --services=data,index,query
 
    
     # Rebalancing could also be done here, but then a killed container doesn't rebalance automatically
