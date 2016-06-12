@@ -20,6 +20,11 @@ wait_for_start() {
     done
 }
 
+if [ -z "$CLUSTER_RAM_QUOTA" ] ; then
+    echo "Missing cluster ram quota, setting to 1024"
+    export CLUSTER_RAM_QUOTA=1024 ; 
+fi
+
 HOST=127.0.0.1
 PORT=8091
 
@@ -75,17 +80,21 @@ else
     wait_for_start couchbase-cli server-info -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
     
     # init the cluster
-    # Note that because we depend on the regular couchbase docker image this
-    # may not be strictly necessary.
+    # It's very important to get these arguments right, because after
+    # a cluster is provisioned, some parameters (like services) cannot
+    # be changed.
     echo "Initializing cluster configuration ..."
-    couchbase-cli cluster-edit -c $HOST \
+    couchbase-cli cluster-init -c $HOST \
         -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
         --cluster-username=${ADMIN_LOGIN} \
         --cluster-password=${ADMIN_PASSWORD} \
         --cluster-port=$PORT \
-        --cluster-ramsize=${CLUSTER_RAM_QUOTA} \
+        --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --services=data,index,query
-    
+  
+    echo "Gathering server info, should show services configured" 
+    couchbase-cli server-info -c $HOST -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+
     # Create bucket for model data
     echo "Creating bucket " $MODEL_BUCKET " ..."
     couchbase-cli bucket-create -c $HOST \
@@ -93,8 +102,7 @@ else
         --bucket=$MODEL_BUCKET \
         --bucket-type=couchbase \
         --bucket-ramsize=$MODEL_BUCKET_RAMSIZE \
-        --wait \
-        --services=data,index,query
+        --wait 
 
     # Set model bucket to be high priority
     echo "Setting " $MODEL_BUCKET " bucket to be high priority..."
@@ -111,8 +119,7 @@ else
         --bucket=$FILE_BUCKET \
         --bucket-type=couchbase \
         --bucket-ramsize=$FILE_BUCKET_RAMSIZE \
-        --wait \
-        --services=data
+        --wait 
 
     echo "Setting " $FILE_BUCKET " bucket to be low priority..."
     couchbase-cli bucket-edit -c $HOST \
