@@ -78,7 +78,7 @@ else
     # Note that because we depend on the regular couchbase docker image this
     # may not be strictly necessary.
     echo "Initializing cluster configuration ..."
-    couchbase-cli cluster-edit -c $HOST \
+    couchbase-cli cluster-init -c $HOST \
         -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
         --cluster-username=${ADMIN_LOGIN} \
         --cluster-password=${ADMIN_PASSWORD} \
@@ -93,8 +93,7 @@ else
         --bucket=$MODEL_BUCKET \
         --bucket-type=couchbase \
         --bucket-ramsize=$MODEL_BUCKET_RAMSIZE \
-        --wait \
-        --services=data,index,query
+        --wait 
 
     # Set model bucket to be high priority
     echo "Setting " $MODEL_BUCKET " bucket to be high priority..."
@@ -111,8 +110,7 @@ else
         --bucket=$FILE_BUCKET \
         --bucket-type=couchbase \
         --bucket-ramsize=$FILE_BUCKET_RAMSIZE \
-        --wait \
-        --services=data
+        --wait 
 
     echo "Setting " $FILE_BUCKET " bucket to be low priority..."
     couchbase-cli bucket-edit -c $HOST \
