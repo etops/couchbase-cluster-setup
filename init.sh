@@ -80,8 +80,9 @@ else
     wait_for_start couchbase-cli server-info -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
     
     # init the cluster
-    # Note that because we depend on the regular couchbase docker image this
-    # may not be strictly necessary.
+    # It's very important to get these arguments right, because after
+    # a cluster is provisioned, some parameters (like services) cannot
+    # be changed.
     echo "Initializing cluster configuration ..."
     couchbase-cli cluster-init -c $HOST \
         -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
