@@ -20,6 +20,11 @@ wait_for_start() {
     done
 }
 
+if [ -z "$CLUSTER_RAM_QUOTA" ] ; then
+    echo "Missing cluster ram quota, setting to 1024"
+    export CLUSTER_RAM_QUOTA=1024 ; 
+fi
+
 HOST=127.0.0.1
 PORT=8091
 
@@ -83,9 +88,12 @@ else
         --cluster-username=${ADMIN_LOGIN} \
         --cluster-password=${ADMIN_PASSWORD} \
         --cluster-port=$PORT \
-        --cluster-ramsize=${CLUSTER_RAM_QUOTA} \
+        --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --services=data,index,query
-    
+  
+    echo "Gathering server info, should show services configured" 
+    couchbase-cli server-info -c $HOST -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+
     # Create bucket for model data
     echo "Creating bucket " $MODEL_BUCKET " ..."
     couchbase-cli bucket-create -c $HOST \
