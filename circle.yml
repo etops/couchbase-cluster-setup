@@ -5,6 +5,12 @@ machine:
     DOCKER_PRIVATE_REPO: ${CIRCLE_PROJECT_USERNAME}
     IMAGE_NAME: couchbase
 
+general:
+  artifacts:
+    - ./models.json
+    - ./files.json
+    - ./couchbase.log
+
 dependencies:
   override:
     - docker info
@@ -12,9 +18,15 @@ dependencies:
 
 test:
   override:
-    - docker run -d -p 8091:8091 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 20
+    - docker run --name couchbase -d -p 8091:8091 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 80
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
-
+    - curl -u admin:admin001* http://localhost:8091/pools | python -mjson.tool
+    - curl -u admin:admin001* http://localhost:8091/pools/default/buckets | python -mjson.tool
+    # In testing, we expect these two buckets to exist, or the server didn't config itself right.
+    - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/models | python -mjson.tool > models.json
+    - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/files | python -mjson.tool > files.json
+    - docker logs --tail=all couchbase > couchbase.log
+    
 deployment:
   release:
     tag: /[0-9]+(\.[0-9]+)*/
