@@ -22,7 +22,12 @@ wait_for_start() {
 
 if [ -z "$CLUSTER_RAM_QUOTA" ] ; then
     echo "Missing cluster ram quota, setting to 1024"
-    export CLUSTER_RAM_QUOTA=1024 ; 
+    export CLUSTER_RAM_QUOTA=512 ; 
+fi
+
+if [ -z "$INDEX_RAM_QUOTA" ] ; then
+    echo "Missing index ram quota; setting to 256"
+    export INDEX_RAM_QUOTA=256 ;
 fi
 
 HOST=127.0.0.1
@@ -32,13 +37,21 @@ PORT=8091
 # Give this one more memory, so it can cache 
 # more, faster access.
 MODEL_BUCKET=models
-MODEL_BUCKET_RAMSIZE=512
+
+if [ -z "$MODEL_BUCKET_RAMSIZE" ] ; then
+   echo "Missing model bucket ramsize; setting to 256"
+   MODEL_BUCKET_RAMSIZE=256 ;
+fi
 
 # File bucket configuration options.
 # Memory can be much lower because it's not important to 
 # keep a resident set in memory for fast query/access.
 FILE_BUCKET=files
-FILE_BUCKET_RAMSIZE=128
+
+if [ -z "$FILE_BUCKET_RAMSIZE" ] ; then
+   echo "Missing file bucket ramsize; setting to 128"
+   FILE_BUCKET_RAMSIZE=128 ;
+fi
 
 # if this node should reach an existing server (a couchbase link is defined)  => env is set by docker compose link
 if [ -n "${COUCHBASE_NAME:+1}" ]; then
@@ -90,6 +103,7 @@ else
         --cluster-password=${ADMIN_PASSWORD} \
         --cluster-port=$PORT \
         --cluster-ramsize=$CLUSTER_RAM_QUOTA \
+        --cluster-index-ramsize=$INDEX_RAM_QUOTA \
         --services=data,index,query
   
     echo "Gathering server info, should show services configured" 

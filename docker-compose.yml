@@ -6,7 +6,7 @@ couchbase-init:
         - "8093:8093"
         - "11210:11210"
     environment:
-        - CLUSTER_RAM_QUOTA=1024
+        - CLUSTER_RAM_QUOTA=512
     restart: always
     volumes:
         - ~/couchbase/node1:/opt/couchbase/var
@@ -15,7 +15,7 @@ couchbase:
     links:
         - couchbase-init:couchbase
     environment: 
-        - CLUSTER_RAM_QUOTA=1024
+        - CLUSTER_RAM_QUOTA=512
     restart: always
     
     
