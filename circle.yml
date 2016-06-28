@@ -18,8 +18,10 @@ dependencies:
 
 test:
   override:
-    - docker run --name couchbase -d -p 8091:8091 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 80
+    - docker run --name couchbase -d -p 8091:8091 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
+    # This blocks until container is ready.
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
+    # Diagnostic information to make it easier to trace the build.
     - curl -u admin:admin001* http://localhost:8091/pools | python -mjson.tool
     - curl -u admin:admin001* http://localhost:8091/pools/default/buckets | python -mjson.tool
     # In testing, we expect these two buckets to exist, or the server didn't config itself right.

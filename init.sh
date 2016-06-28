@@ -10,6 +10,7 @@
 #
 #
 echo "starting ...."
+echo "using client at " `which couchbase-cli`
 wait_for_start() {
     "$@"
     while [ $? -ne 0 ]
@@ -30,7 +31,7 @@ if [ -z "$INDEX_RAM_QUOTA" ] ; then
     export INDEX_RAM_QUOTA=256 ;
 fi
 
-HOST=127.0.0.1
+HOST=localhost
 PORT=8091
 
 # Model bucket configuration options.
@@ -58,13 +59,13 @@ if [ -n "${COUCHBASE_NAME:+1}" ]; then
 
     echo "add node to cluster"
     # wait for couchbase clustering to be setup
-    wait_for_start couchbase-cli server-list -c couchbase:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+    wait_for_start couchbase-cli server-list -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
     
     echo "launch couchbase"
     /entrypoint.sh couchbase-server &
 
     # wait for couchbase to be up (this is the local couchbase belonging to this container)
-    wait_for_start couchbase-cli server-info -c localhost:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+    wait_for_start couchbase-cli server-info -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
     
     # add this new node to the cluster
     ip=`hostname --ip-address`
@@ -90,7 +91,7 @@ else
     /entrypoint.sh couchbase-server &
 
     # wait for couchbase to be up
-    wait_for_start couchbase-cli server-info -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+    wait_for_start curl -v $HOST:$PORT -C -
     
     # init the cluster
     # It's very important to get these arguments right, because after
@@ -106,9 +107,6 @@ else
         --cluster-index-ramsize=$INDEX_RAM_QUOTA \
         --services=data,index,query
   
-    echo "Gathering server info, should show services configured" 
-    couchbase-cli server-info -c $HOST -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
-
     # Create bucket for model data
     echo "Creating bucket " $MODEL_BUCKET " ..."
     couchbase-cli bucket-create -c $HOST \
@@ -157,6 +155,30 @@ else
     echo "Inspecting bucket list..."
     couchbase-cli bucket-list -c $HOST \
         -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+
+    echo "Inspecting server list..."
+    couchbase-cli server-list -c $HOST \
+        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+
+    # Annoying, but this setting is required in couchbase 4.5.0 and is not
+    # supported by couchbase-cli as of June 29 2016.
+    # Reference: https://issues.couchbase.com/browse/MB-18803
+    # Reference: https://forums.couchbase.com/t/couchbase-cli-with-4-5-0/8905
+    # memory-optimized indexes are a new 4.5.0 feature available only in enterprise.
+    # Sometimes logs may say you can't have this without a license.  Even in this case,
+    # it has the effect of setting the option as we want.
+    echo "Setting indexes to memory optimized"
+    curl -i -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" -X POST \
+         http://$HOST:$PORT/settings/indexes \
+         -d 'storageMode=memory_optimized'
+    curl -i -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" -X GET \
+         http://$HOST:$PORT/settings/indexes
+
+    echo "Cluster info after startup..."
+    curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/pools
+
+    echo "Cluster internal settings after startup..."
+    curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/internalSettings
 
     # Email alerts (not used, TBD)
     # http://developer.couchbase.com/documentation/server/current/cli/cbcli/setting-alert.html
