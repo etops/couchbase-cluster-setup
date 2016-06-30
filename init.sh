@@ -105,6 +105,7 @@ else
         --cluster-port=$PORT \
         --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --cluster-index-ramsize=$INDEX_RAM_QUOTA \
+	--index-storage-setting=default \
         --services=data,index,query
   
     # Create bucket for model data
@@ -159,20 +160,6 @@ else
     echo "Inspecting server list..."
     couchbase-cli server-list -c $HOST \
         -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
-
-    # Annoying, but this setting is required in couchbase 4.5.0 and is not
-    # supported by couchbase-cli as of June 29 2016.
-    # Reference: https://issues.couchbase.com/browse/MB-18803
-    # Reference: https://forums.couchbase.com/t/couchbase-cli-with-4-5-0/8905
-    # memory-optimized indexes are a new 4.5.0 feature available only in enterprise.
-    # Sometimes logs may say you can't have this without a license.  Even in this case,
-    # it has the effect of setting the option as we want.
-    echo "Setting indexes to memory optimized"
-    curl -i -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" -X POST \
-         http://$HOST:$PORT/settings/indexes \
-         -d 'storageMode=memory_optimized'
-    curl -i -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" -X GET \
-         http://$HOST:$PORT/settings/indexes
 
     echo "Cluster info after startup..."
     curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/pools
