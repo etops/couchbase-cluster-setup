@@ -11,7 +11,7 @@
 #
 echo "starting ...."
 echo "using client at " `which couchbase-cli`
-wait_for_start() {
+wait_for_success() {
     "$@"
     while [ $? -ne 0 ]
     do
@@ -19,6 +19,23 @@ wait_for_start() {
         sleep 2
         "$@"
     done
+}
+
+wait_for_healthy() {
+    status="beats me"
+
+    while [[ "$status" != *"healthy"* ]]
+    do
+        echo "Waiting on couchbase to finish setup and become healthy..."
+        
+        # Nasty way to parse json with sed rather than installing 
+        # extra tools in the VM for this one tiny thing.
+        status=`curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/pools/default 2>/dev/null | sed 's/.*status\"://g' | sed 's/,.*//'`
+        echo "Cluster status " $status `date`
+        sleep 2
+    done
+
+    echo "Healthy"
 }
 
 if [ -z "$CLUSTER_RAM_QUOTA" ] ; then
@@ -59,13 +76,13 @@ if [ -n "${COUCHBASE_NAME:+1}" ]; then
 
     echo "add node to cluster"
     # wait for couchbase clustering to be setup
-    wait_for_start couchbase-cli server-list -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+    wait_for_success curl -v -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
     
     echo "launch couchbase"
     /entrypoint.sh couchbase-server &
 
     # wait for couchbase to be up (this is the local couchbase belonging to this container)
-    wait_for_start couchbase-cli server-info -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+    wait_for_success couchbase-cli server-info -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
     
     # add this new node to the cluster
     ip=`hostname --ip-address`
@@ -85,13 +102,17 @@ if [ -n "${COUCHBASE_NAME:+1}" ]; then
         --server-add-username=$ADMIN_LOGIN \
         --server-add-password=$ADMIN_PASSWORD \
         --services=data,index,query
+
+   wait_for_healthy
 else
 
     echo "Launching Couchbase..."
     /entrypoint.sh couchbase-server &
 
     # wait for couchbase to be up
-    wait_for_start curl -v $HOST:$PORT -C -
+    # This is not sufficient to know that the cluster is healthy and ready to accept queries,
+    # but it indicates the REST API is ready to take configuration settings.
+    wait_for_success curl -v -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
     
     # init the cluster
     # It's very important to get these arguments right, because after
@@ -139,11 +160,6 @@ else
         -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
         --bucket=$FILE_BUCKET \
         --bucket-priority=low
-
-    echo "Deleting unused cache bucket (if present)..."
-    couchbase-cli bucket-delete -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
-        --bucket=cache
 
     echo "Configuring index settings..."
     couchbase-cli setting-index -c $HOST \
@@ -200,6 +216,8 @@ else
     
     # rebalance
     # couchbase-cli rebalance -c $HOST -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+
+    wait_for_healthy
 
     echo "Finished with cluster setup/config."
 fi
