@@ -96,3 +96,14 @@ Cluster Design Considerations
 suggests keeping number of total buckets to a minimum, ideally 5 or less, never more than 10.
 
 They recommend starting in one bucket and growing out as necessary.
+
+
+Minimum Requirements
+---------------------------
+
+Couchbase's published guidance [can be found here](http://developer.couchbase.com/documentation/server/current/install/pre-install.html).
+
+Deployment Best Practices
+---------------------------
+
+[See notes here](https://hub.docker.com/r/couchbase/server/).

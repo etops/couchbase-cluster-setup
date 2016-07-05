@@ -1,4 +1,4 @@
-FROM couchbase/server:community-4.0.0
+FROM couchbase/server:4.5.0
 
 MAINTAINER ETOPS AG
 
@@ -7,6 +7,13 @@ ENV ADMIN_LOGIN=admin \
 
 COPY init.sh /
 RUN chmod +x /init.sh
+
+# Curl is needed as a diagnostic tool during build.
+RUN apt-get update && \
+    apt-get install -yq curl && \
+    apt-get autoremove && \
+    apt-get clean 
+
 ENTRYPOINT ["/init.sh"]
 
 # 8091: Couchbase Web console, REST/HTTP interface
