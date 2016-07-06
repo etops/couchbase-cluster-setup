@@ -14,11 +14,12 @@ general:
 dependencies:
   override:
     - docker info
-    - docker build -t $IMAGE_NAME:$CIRCLE_BUILD_NUM .
+    # - docker build -t $IMAGE_NAME:$CIRCLE_BUILD_NUM .
 
 test:
   override:
-    - docker run --name couchbase -d -p 8091:8091 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
+    # - docker run --name couchbase -d -p 8091:8091 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
+    - docker-compose up -d; sleep 60
     # This blocks until container is ready.
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
     # Diagnostic information to make it easier to trace the build.
