@@ -11,6 +11,19 @@
 #
 echo "starting ...."
 echo "using client at " `which couchbase-cli`
+env
+
+echo "==============================================================="
+
+HOST=localhost
+PORT=8091
+
+if [ -n "$COUCHBASE_INIT_1_PORT_8091_TCP_ADDR" ] ; then    
+    MASTER_HOST=$COUCHBASE_INIT_1_PORT_8091_TCP_ADDR
+    MASTER_PORT=$COUCHBASE_INIT_1_PORT_8091_TCP_PORT
+    echo "I am a slave node connecting to " $MASTER_HOST ":" $MASTER_PORT
+fi
+
 wait_for_success() {
     "$@"
     while [ $? -ne 0 ]
@@ -24,13 +37,22 @@ wait_for_success() {
 wait_for_healthy() {
     status="beats me"
 
+    QHOST=$HOST
+    QPORT=$PORT
+
+    if [ -n "$MASTER_HOST" ] ; then 
+        QHOST=$MASTER_HOST
+        QPORT=$MASTER_PORT ;
+    fi
+
     while [[ "$status" != *"healthy"* ]]
     do
+        echo "=========================================================="
         echo "Waiting on couchbase to finish setup and become healthy..."
         
         # Nasty way to parse json with sed rather than installing 
         # extra tools in the VM for this one tiny thing.
-        status=`curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/pools/default 2>/dev/null | sed 's/.*status\"://g' | sed 's/,.*//'`
+        status=`curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$QHOST:$QPORT/pools/default 2>/dev/null | sed 's/.*status\"://g' | sed 's/,.*//'`
         echo "Cluster status " $status `date`
         sleep 2
     done
@@ -47,9 +69,6 @@ if [ -z "$INDEX_RAM_QUOTA" ] ; then
     echo "Missing index ram quota; setting to 256"
     export INDEX_RAM_QUOTA=256 ;
 fi
-
-HOST=localhost
-PORT=8091
 
 # Model bucket configuration options.
 # Give this one more memory, so it can cache 
@@ -72,47 +91,42 @@ if [ -z "$FILE_BUCKET_RAMSIZE" ] ; then
 fi
 
 # if this node should reach an existing server (a couchbase link is defined)  => env is set by docker compose link
-if [ -n "${COUCHBASE_NAME:+1}" ]; then
+if [ -n "${COUCHBASE_NAME}" ]; then
+    ip=`hostname --ip-address`
 
-    echo "add node to cluster"
-    # wait for couchbase clustering to be setup
-    wait_for_success curl -v -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
-    
-    echo "launch couchbase"
+    echo "Launching Couchbase Slave Node " $COUCHBASE_NAME " on " $ip
     /entrypoint.sh couchbase-server &
 
-    # wait for couchbase to be up (this is the local couchbase belonging to this container)
-    wait_for_success couchbase-cli server-info -c $HOST:$PORT -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+    echo "Waiting for slave to be ready..."
+    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $ip:$PORT/pools/default -C -
     
-    # add this new node to the cluster
-    ip=`hostname --ip-address`
-    #couchbase-cli server-add -c couchbase -u $ADMIN_LOGIN -p $ADMIN_PASSWORD --server-add=$ip:$PORT --server-add-username=$ADMIN_LOGIN --server-add-password=$ADMIN_PASSWORD
-    
-    echo "node added to cluster"
-    
-    # wait for other node to connect to the cluster
-    #sleep 10
-
-    echo "adding and rebalancing ..."
-    
+    echo "Waiting for master to be ready..."
+    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $MASTER_HOST:$MASTER_PORT/pools/default -C -
+     
+    echo "Adding myself to the cluster, and rebalancing...."    
     # rebalance
-    couchbase-cli rebalance -c couchbase \
+    couchbase-cli rebalance -c $MASTER_HOST:$MASTER_PORT \
         -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
         --server-add=$ip:$PORT \
         --server-add-username=$ADMIN_LOGIN \
         --server-add-password=$ADMIN_PASSWORD \
+        --index-storage-setting=default \
         --services=data,index,query
 
+   echo "Listing servers"
+   couchbase-cli server-list -c $ip:$PORT \
+       -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+
+   echo "Waiting until resulting cluster is healthy..."
    wait_for_healthy
 else
-
     echo "Launching Couchbase..."
     /entrypoint.sh couchbase-server &
 
     # wait for couchbase to be up
     # This is not sufficient to know that the cluster is healthy and ready to accept queries,
     # but it indicates the REST API is ready to take configuration settings.
-    wait_for_success curl -v -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
+    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
     
     # init the cluster
     # It's very important to get these arguments right, because after
@@ -178,10 +192,10 @@ else
         -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
 
     echo "Cluster info after startup..."
-    curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/pools
+    curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/pools
 
     echo "Cluster internal settings after startup..."
-    curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/internalSettings
+    curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/internalSettings
 
     # Email alerts (not used, TBD)
     # http://developer.couchbase.com/documentation/server/current/cli/cbcli/setting-alert.html

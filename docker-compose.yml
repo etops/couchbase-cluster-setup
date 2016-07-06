@@ -7,6 +7,8 @@ couchbase-init:
         - "11210:11210"
     environment:
         - CLUSTER_RAM_QUOTA=512
+        - ADMIN_LOGIN
+        - ADMIN_PASSWORD
     restart: always
     volumes:
         - ~/couchbase/node1:/opt/couchbase/var
@@ -16,6 +18,8 @@ couchbase:
         - couchbase-init:couchbase
     environment: 
         - CLUSTER_RAM_QUOTA=512
+        - ADMIN_LOGIN
+        - ADMIN_PASSWORD
     restart: always
     
     

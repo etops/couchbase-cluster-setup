@@ -4,12 +4,13 @@ machine:
   environment:
     DOCKER_PRIVATE_REPO: ${CIRCLE_PROJECT_USERNAME}
     IMAGE_NAME: couchbase
+    ADMIN_LOGIN: admin
+    ADMIN_PASSWORD: s00pers3cr3ty*
 
 general:
   artifacts:
     - ./models.json
     - ./files.json
-    - ./couchbase.log
 
 dependencies:
   override:
@@ -23,12 +24,19 @@ test:
     # This blocks until container is ready.
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
     # Diagnostic information to make it easier to trace the build.
-    - curl -u admin:admin001* http://localhost:8091/pools | python -mjson.tool
-    - curl -u admin:admin001* http://localhost:8091/pools/default/buckets | python -mjson.tool
+    - curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools | python -mjson.tool
+    - curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default/buckets | python -mjson.tool
+    - curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default | python -mjson.tool | egrep "(clusterMembership|hostname|status)"
     # In testing, we expect these two buckets to exist, or the server didn't config itself right.
-    - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/models | python -mjson.tool > models.json
-    - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/files | python -mjson.tool > files.json
-    - docker logs --tail=all couchbase > couchbase.log
+    - curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default/buckets/models | python -mjson.tool > models.json
+    - curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default/buckets/files | python -mjson.tool > files.json
+    - perl dump-docker-logs.pl prescale
+    - cp ./logs/* $CIRCLE_ARTIFACTS
+    - docker-compose scale couchbase=2 ; sleep 120
+    - ./test/wait_for_health.sh
+    - perl dump-docker-logs.pl postscale
+    - curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default | python -mjson.tool | tee $CIRCLE_ARTIFACTS/final-status.log | egrep "(clusterMembership|hostname|status)"    
+    - cp ./logs/* $CIRCLE_ARTIFACTS 
     
 deployment:
   release:
@@ -46,7 +54,6 @@ deployment:
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
       
-
 notify:
   webhooks:
     # A list of hook hashes, containing the url field

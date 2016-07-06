@@ -3,6 +3,20 @@ Couchbase Cluster with docker and docker-compose
 
 Hint: on Linux use sudo before docker.
 
+Configure
+-----------
+Cluster accepts the following parameters:
+
+- `ADMIN_LOGIN`
+- `ADMIN_PASSWORD` (must be minimum 8 chars with special chars)
+- `CLUSTER_RAM_QUOTA` (recommended minimum 2048)
+- `INDEX_RAM_QUOTA` (recommended minimum 256)
+- `MODEL_BUCKET_RAMSIZE` (recommended minimum 256)
+- `FILE_BUCKET_RAMSIZE` (recommended minimum 256)
+
+For what the couchbase memory parameters mean, see 
+[Couchbase Cluster Settings documentation](http://developer.couchbase.com/documentation/server/current/settings/cluster-settings.html)
+
 Run
 ---
 1. ```git clone https://github.com/etops/couchbase-cluster-setup.git```
