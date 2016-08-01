@@ -3,7 +3,7 @@ machine:
     - docker
   environment:
     DOCKER_PRIVATE_REPO: ${CIRCLE_PROJECT_USERNAME}
-    IMAGE_NAME: couchbase
+    IMAGE_NAME: couchbase 
 
 general:
   artifacts:
