@@ -62,7 +62,7 @@ wait_for_healthy() {
 
 if [ -z "$CLUSTER_RAM_QUOTA" ] ; then
     echo "Missing cluster ram quota, setting to 1024"
-    export CLUSTER_RAM_QUOTA=512 ; 
+    export CLUSTER_RAM_QUOTA=1024 ; 
 fi
 
 if [ -z "$INDEX_RAM_QUOTA" ] ; then
