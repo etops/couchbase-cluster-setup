@@ -1,4 +1,4 @@
-FROM couchbase/server:4.5.0
+FROM couchbase:community-4.5.0
 
 MAINTAINER ETOPS AG
 
@@ -12,7 +12,7 @@ RUN chmod +x /init.sh
 RUN apt-get update && \
     apt-get install -yq curl && \
     apt-get autoremove && \
-    apt-get clean 
+    apt-get clean
 
 ENTRYPOINT ["/init.sh"]
 
