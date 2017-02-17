@@ -1,6 +1,6 @@
-FROM couchbase/server:community-4.0.0
+FROM couchbase/server:4.6.0
 
-MAINTAINER ETOPS AG
+MAINTAINER Nectar Financial AG
 
 ENV ADMIN_LOGIN=admin \
     ADMIN_PASSWORD=admin001*
