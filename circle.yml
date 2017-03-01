@@ -4,6 +4,7 @@ machine:
   environment:
     DOCKER_PRIVATE_REPO: ${CIRCLE_PROJECT_USERNAME}
     IMAGE_NAME: couchbase
+    LOCAL_MAPPING: ~/nectar-stack/couchbase/node1
     VOLUME_MAPPING: ~/nectar-stack/couchbase/node1:/opt/couchbase/var
 
 general:
@@ -11,6 +12,7 @@ general:
     - ./models.json
     - ./files.json
     - ./couchbase.log
+    - ./test-queries
 
 dependencies:
   override:
@@ -18,7 +20,8 @@ dependencies:
     - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
     - docker build -t $IMAGE_NAME:$CIRCLE_BUILD_NUM .
     - docker pull etops/dockup:latest
-    - mkdir -p nectar-stack/couchbase/node1
+    - mkdir -p $LOCAL_MAPPING
+    - mkdir test-queries
     - docker run -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" -e "BACKUP_NAME=couchbase" -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" -e "PATHS_TO_BACKUP=/opt/couchbase/var" -e "RESTORE=true" -e "S3_BUCKET_NAME=nectar-circleci" -v $VOLUME_MAPPING etops/dockup:latest
 
 test:
@@ -30,9 +33,9 @@ test:
     # In testing, we expect these two buckets to exist, or the server didn't config itself right.
     - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/models | python -mjson.tool > models.json
     - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/files | python -mjson.tool > files.json
-    - curl -u admin:admin001* http://localhost:8093/query/service -d 'statement=select count(*) from models'
+    - ./test/test-queries.sh
     - docker logs --tail=all couchbase > couchbase.log
-    - ls ~/nectar-stack/couchbase/node1
+    - ls $LOCAL_MAPPING
     
 deployment:
   release:
