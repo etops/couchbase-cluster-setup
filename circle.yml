@@ -15,6 +15,7 @@ dependencies:
   override:
     - docker info
     - docker build -t $IMAGE_NAME:$CIRCLE_BUILD_NUM .
+    - docker pull etops/dockup:latest
 
 test:
   override:
