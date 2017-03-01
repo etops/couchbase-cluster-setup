@@ -141,11 +141,6 @@ else
         --bucket=$FILE_BUCKET \
         --bucket-priority=low
 
-    echo "Deleting unused cache bucket (if present)..."
-    couchbase-cli bucket-delete -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
-        --bucket=cache
-
     echo "Configuring index settings..."
     couchbase-cli setting-index -c $HOST \
         -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
