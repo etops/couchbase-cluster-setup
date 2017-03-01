@@ -17,6 +17,7 @@ dependencies:
     - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
     - docker build -t $IMAGE_NAME:$CIRCLE_BUILD_NUM .
     - docker pull etops/dockup:latest
+    - docker run -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" -e "BACKUP_NAME=couchbase" -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" -e "PATHS_TO_BACKUP=/opt/couchbase/var" -e "RESTORE=true" -e "S3_BUCKET_NAME=nectar-circleci" -v ~/nectar-stack/couchbase/node1:/opt/couchbase/var etops/dockup:latest
 
 test:
   override:
@@ -28,7 +29,6 @@ test:
     - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/models | python -mjson.tool > models.json
     - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/files | python -mjson.tool > files.json
     - mkdir -p nectar-stack/couchbase/node1
-    - docker run -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" -e "BACKUP_NAME=couchbase" -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" -e "PATHS_TO_BACKUP=/opt/couchbase/var" -e "RESTORE=true" -e "S3_BUCKET_NAME=nectar-circleci" -v ~/nectar-stack/couchbase/node1:/opt/couchbase/var etops/dockup:latest
     - docker logs --tail=all couchbase > couchbase.log
     
 deployment:
