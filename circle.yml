@@ -14,6 +14,7 @@ general:
 dependencies:
   override:
     - docker info
+    - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
     - docker build -t $IMAGE_NAME:$CIRCLE_BUILD_NUM .
     - docker pull etops/dockup:latest
 
@@ -43,7 +44,6 @@ deployment:
     branch: master
     commands:
       - docker tag    $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
-      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
       
 
