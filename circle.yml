@@ -12,7 +12,7 @@ containerInfo:
   - image: redis@sha256:54057dd7e125ca41afe526a877e8bd35ec2cdd33b9217e022ed37bdcf7d09673
   - image: rabbitmq:3.5.4
 stages:
-  dependencies:
+  build:
     workDir: ~/couchbase-cluster-setup
     steps:
       - type: checkout
