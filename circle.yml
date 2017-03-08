@@ -2,15 +2,7 @@ version: 2
 executorType: docker
 containerInfo:
   - image: ubuntu:14.04
-    cmd: ["/bin/bash"] # specify if image does not already have Command set
-  - image: mongo:2.6.8
-    cmd: [mongod, --smallfiles]
-  - image: postgres:9.4.1
-    # some containers require setting environment variables
-    env:
-      - POSTGRES_USER=root
-  - image: redis@sha256:54057dd7e125ca41afe526a877e8bd35ec2cdd33b9217e022ed37bdcf7d09673
-  - image: rabbitmq:3.5.4
+    cmd: ["/bin/bash", git] # specify if image does not already have Command set
 stages:
   build:
     workDir: ~/couchbase-cluster-setup
