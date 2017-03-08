@@ -1,7 +1,7 @@
 version: 2
 executorType: docker
 containerInfo:
-  - image: ubuntu:14.04
+  - image: dockerfile/ubuntu
     cmd: ["/bin/bash"] # specify if image does not already have Command set
 stages:
   build:
