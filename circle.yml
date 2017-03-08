@@ -1,8 +1,11 @@
 version: 2
 executorType: docker
 containerInfo:
-  - image: dockerfile/ubuntu
+  - image: ubuntu:14.04
     cmd: ["/bin/bash"] # specify if image does not already have Command set
+  - image: mongo:2.6.8
+    cmd: [mongod, --smallfiles]
+  - image: postgres:9.4.1    
 stages:
   build:
     workDir: ~/couchbase-cluster-setup
