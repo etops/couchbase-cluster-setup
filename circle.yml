@@ -2,7 +2,7 @@ version: 2
 executorType: docker
 containerInfo:
   - image: ubuntu:14.04
-    cmd: ["/bin/bash", git] # specify if image does not already have Command set
+    cmd: ["/bin/bash"] # specify if image does not already have Command set
 stages:
   build:
     workDir: ~/couchbase-cluster-setup
