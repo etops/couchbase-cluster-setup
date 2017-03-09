@@ -3,6 +3,20 @@ Couchbase Cluster with docker and docker-compose
 
 Hint: on Linux use sudo before docker.
 
+Configure
+-----------
+Cluster accepts the following parameters:
+
+- `ADMIN_LOGIN`
+- `ADMIN_PASSWORD` (must be minimum 8 chars with special chars)
+- `CLUSTER_RAM_QUOTA` (recommended minimum 2048)
+- `INDEX_RAM_QUOTA` (recommended minimum 256)
+- `MODEL_BUCKET_RAMSIZE` (recommended minimum 256)
+- `FILE_BUCKET_RAMSIZE` (recommended minimum 256)
+
+For what the couchbase memory parameters mean, see 
+[Couchbase Cluster Settings documentation](http://developer.couchbase.com/documentation/server/current/settings/cluster-settings.html)
+
 Run
 ---
 1. ```git clone https://github.com/etops/couchbase-cluster-setup.git```
@@ -96,3 +110,14 @@ Cluster Design Considerations
 suggests keeping number of total buckets to a minimum, ideally 5 or less, never more than 10.
 
 They recommend starting in one bucket and growing out as necessary.
+
+
+Minimum Requirements
+---------------------------
+
+Couchbase's published guidance [can be found here](http://developer.couchbase.com/documentation/server/current/install/pre-install.html).
+
+Deployment Best Practices
+---------------------------
+
+[See notes here](https://hub.docker.com/r/couchbase/server/).
