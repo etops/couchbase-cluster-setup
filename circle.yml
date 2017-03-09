@@ -1,94 +1,60 @@
-version: 2
-executorType: docker
-containerInfo:
-  - image: ubuntu:14.04
-    cmd: ["/bin/bash"] # specify if image does not already have Command set
-  - image: mongo:2.6.8
-    cmd: [mongod, --smallfiles]
-  - image: postgres:9.4.1    
-stages:
-  build:
-    workDir: ~/couchbase-cluster-setup
-    steps:
-      - type: checkout
+machine:
+  services:
+    - docker
+  environment:
+    DOCKER_PRIVATE_REPO: ${CIRCLE_PROJECT_USERNAME}
+    IMAGE_NAME: couchbase
+    LOCAL_MAPPING: ~/nectar-stack/couchbase/node1
+    VOLUME_MAPPING: ~/nectar-stack/couchbase/node1:/opt/couchbase/var
 
-      - type: shell
-        shell: /bin/bash
-        command: |
-          mkdir artifacts
-          docker info
-          docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-          docker build -t $IMAGE_NAME:$CIRCLE_BUILD_NUM . 
-        environment:
-          IMAGE_NAME: couchbase          
+general:
+  artifacts:
+    - ./models.json
+    - ./files.json
+    - ./couchbase.log
+    - ./test-queries
 
-      - type: shell
-        shell: /bin/bash
-        command: |
-          mkdir -p $LOCAL_MAPPING
-          mkdir test-queries
-          docker run -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" -e "BACKUP_NAME=couchbase" -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" -e "PATHS_TO_BACKUP=/opt/couchbase/var" -e "RESTORE=true" -e "S3_BUCKET_NAME=nectar-circleci" -v $VOLUME_MAPPING etops/dockup:latest
-  
-  test:
-    workDir: ~/couchbase-cluster-setup
-    environment:
-      - LOCAL_MAPPING: "~/nectar-stack/couchbase/node1"
-      - VOLUME_MAPPING: "~/nectar-stack/couchbase/node1:/opt/couchbase/var"
-      - IMAGE_NAME: couchbase
-    steps:
-      # Run the image we just created.
-      - type: shell
-        shell: /bin/bash
-        command: |
-          docker run -v $VOLUME_MAPPING --name couchbase -d -p 8091:8091 -p 8093:8093 $IMAGE_NAME:$CIRCLE_BUILD_NUM
-          sleep 80
+dependencies:
+  override:
+    - docker info
+    - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+    - docker build -t $IMAGE_NAME:$CIRCLE_BUILD_NUM .
+    - docker pull etops/dockup:latest
+    - mkdir -p $LOCAL_MAPPING
+    - mkdir test-queries
+    - docker run -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" -e "BACKUP_NAME=couchbase" -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" -e "PATHS_TO_BACKUP=/opt/couchbase/var" -e "RESTORE=true" -e "S3_BUCKET_NAME=nectar-circleci" -v $VOLUME_MAPPING etops/dockup:latest
 
-      # Ensure DB is available.
-      - type: shell
-        shell: /bin/bash
-        command: curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
+test:
+  override:
+    - docker run -v $VOLUME_MAPPING --name couchbase -d -p 8091:8091 -p 8093:8093 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 80
+    - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
+    - curl -u admin:admin001* http://localhost:8091/pools | python -mjson.tool
+    - curl -u admin:admin001* http://localhost:8091/pools/default/buckets | python -mjson.tool
+    # In testing, we expect these two buckets to exist, or the server didn't config itself right.
+    - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/models | python -mjson.tool > models.json
+    - curl -u admin:admin001* http://localhost:8091/pools/default/buckets/files | python -mjson.tool > files.json
+    - ./test/test-queries.sh
+    - docker logs --tail=all couchbase > couchbase.log
+    - ls $LOCAL_MAPPING
+    
+deployment:
+  release:
+    tag: /[0-9]+(\.[0-9]+)*/
+    commands:
+      - docker tag -f $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
+      - docker tag    $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
+      - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
+  hub:
+    branch: master
+    commands:
+      - docker tag    $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
+      - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
       
-      # Test data capture.
-      - type: shell
-        shell: /bin/bash
-        command: |
-          curl -u admin:admin001* http://localhost:8091/pools | python -mjson.tool
-          curl -u admin:admin001* http://localhost:8091/pools/default/buckets | python -mjson.tool
-          curl -u admin:admin001* http://localhost:8091/pools/default/buckets/models | python -mjson.tool > artifacts/models.json
-          curl -u admin:admin001* http://localhost:8091/pools/default/buckets/files | python -mjson.tool > artifacts/files.json
-          ./test/test-queries.sh
-      
-      # Log capture.
-      - type: shell
-        shell: /bin/bash
-        command: |
-          docker logs --tail=all couchbase > artifacts/couchbase.log
-          ls $LOCAL_MAPPING
-      
-      # TODO -- how to match a tag like we did before?
 
-      # Deploy staging
-      - type: deploy
-        shell: /bin/bash
-        command: |
-          if [ "${CIRCLE_BRANCH}" == "master" ];
-            docker tag $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
-            docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
-          fi
-
-      # Deploy production
-      - type: deploy
-        shell: /bin/bash
-        command: |
-          if [ "${CIRCLE_BRANCH}" == "master" ];
-            then ansible-playbook site.yml -i production;
-          fi
-
-      # Save artifacts
-      - type: artifacts-store
-        path: ~/couchbase-cluster-setup/artifacts
-        destination: build
-
-      # Upload test results
-      - type: test-results-store
-        path: /tmp/test-results
+notify:
+  webhooks:
+    # A list of hook hashes, containing the url field
+    # gitter hook
+    - url: https://webhooks.gitter.im/e/bff8ccf0c23911fdeea1
