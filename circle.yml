@@ -33,7 +33,7 @@ test:
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
     - ./test/test-queries.sh
     - docker ps
-    - docker logs --tail=all couchbaseclustersetup_couchbase-init > couchbase.log
+    - docker logs --tail=all couchbaseclustersetup_couchbase-init_1 > couchbase.log
     - ls $LOCAL_MAPPING
     
 deployment:
