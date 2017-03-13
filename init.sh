@@ -133,10 +133,9 @@ else
     # a cluster is provisioned, some parameters (like services) cannot
     # be changed.
     echo "Initializing cluster configuration ..."
-    couchbase-cli cluster-init -c $HOST \
-        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
-        --cluster-username="${ADMIN_LOGIN}" \
-        --cluster-password="${ADMIN_PASSWORD}" \
+    couchbase-cli cluster-init -c $HOST:8091 \
+        --cluster-username="$ADMIN_LOGIN" \
+        --cluster-password="$ADMIN_PASSWORD" \
         --cluster-port=$PORT \
         --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --cluster-index-ramsize=$INDEX_RAM_QUOTA \
