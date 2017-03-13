@@ -37,6 +37,7 @@ test:
     - curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default/buckets/models | python -mjson.tool > models.json
     - curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default/buckets/files | python -mjson.tool > files.json
     - ./test/test-queries.sh
+    - docker ps
     - docker logs --tail=all couchbase > couchbase.log
     - ls $LOCAL_MAPPING
     
