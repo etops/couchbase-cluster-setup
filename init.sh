@@ -10,6 +10,8 @@
 #
 #
 echo "starting ...."
+echo $ADMIN_LOGIN
+echo $ADMIN_PASSWORD
 echo "using client at " `which couchbase-cli`
 env
 
