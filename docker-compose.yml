@@ -11,7 +11,7 @@ couchbase-init:
         - ADMIN_PASSWORD
     restart: always
     volumes:
-        - ~/couchbase/node1:/opt/couchbase/var
+        - ~/nectar-stack/couchbase/node1:/opt/couchbase/var
 couchbase:
     build: .
     links:
