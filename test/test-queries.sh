@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "Test starting"
+echo `date`
+
 DIR=./test-queries
 AUTH="$ADMIN_LOGIN:$ADMIN_PASSWORD"
 URL=http://localhost:8093/query/service
