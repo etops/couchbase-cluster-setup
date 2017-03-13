@@ -31,11 +31,11 @@ test:
     - docker run -v $VOLUME_MAPPING --name couchbase -e "ADMIN_LOGIN=${ADMIN_LOGIN}" -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" -d -p 8091:8091 -p 8093:8093 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 80
     # - docker-compose up -d; sleep 80
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
-    - curl -u $ADMIN_LOGIN:$ADMIN_PASSWORD http://localhost:8091/pools | python -mjson.tool
-    - curl -u $ADMIN_LOGIN:$ADMIN_PASSWORD http://localhost:8091/pools/default/buckets | python -mjson.tool
+    - curl -v -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools | tee ./test-queries/pools.json
+    - curl -v -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default/buckets | tee ./test-queries/buckets.json
     # In testing, we expect these two buckets to exist, or the server didn't config itself right.
-    - curl -u $ADMIN_LOGIN:$ADMIN_PASSWORD http://localhost:8091/pools/default/buckets/models | python -mjson.tool > models.json
-    - curl -u $ADMIN_LOGIN:$ADMIN_PASSWORD http://localhost:8091/pools/default/buckets/files | python -mjson.tool > files.json
+    - curl -v -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default/buckets/models | tee models.json
+    - curl -v -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://localhost:8091/pools/default/buckets/files | tee files.json
     - ./test/test-queries.sh
     - docker ps
     - docker logs --tail=all couchbase > couchbase.log
