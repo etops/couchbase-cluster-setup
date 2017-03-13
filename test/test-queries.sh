@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIR=./test-queries
-AUTH="admin:admin001*"
+AUTH="$ADMIN_LOGIN:$ADMIN_PASSWORD"
 URL=http://localhost:8093/query/service
 
 curl -u $AUTH $URL -d "statement=select count(*) from models" | python -mjson.tool > $DIR/count-star.json
