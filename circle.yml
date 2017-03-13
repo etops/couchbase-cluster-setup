@@ -28,13 +28,13 @@ dependencies:
 
 test:
   override:
-    # - docker run -v $VOLUME_MAPPING --name couchbase -e "ADMIN_LOGIN=${ADMIN_LOGIN}" -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" -d -p 8091:8091 -p 8093:8093 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
-    - docker-compose up -d; sleep 150
+    - docker run -v $VOLUME_MAPPING --name couchbase -e "ADMIN_LOGIN=${ADMIN_LOGIN}" -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" -d -p 8091:8091 -p 8093:8093 -p 8092:8092 -p 11210:11210 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
+    # - docker-compose up -d; sleep 150
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
     - ./test/test-queries.sh
     - docker ps
-    - docker logs --tail=all couchbaseclustersetup_couchbase-init_1 > couchbase.log
-    # - docker logs --tail=all couchbase > couchbase.log
+    # - docker logs --tail=all couchbaseclustersetup_couchbase-init_1 > couchbase.log
+    - docker logs --tail=all couchbase > couchbase.log
     - ls $LOCAL_MAPPING
     
 deployment:
