@@ -29,7 +29,7 @@ dependencies:
 test:
   override:
     # - docker run -v $VOLUME_MAPPING --name couchbase -e "ADMIN_LOGIN=${ADMIN_LOGIN}" -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" -d -p 8091:8091 -p 8093:8093 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
-    - docker-compose up -d; sleep 80
+    - docker-compose up -d; sleep 120
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
     - ./test/test-queries.sh
     - docker ps

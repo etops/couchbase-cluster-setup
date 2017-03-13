@@ -234,6 +234,7 @@ else
     wait_for_healthy
 
     echo "Finished with cluster setup/config."
+    echo `date`
 fi
         
 wait
