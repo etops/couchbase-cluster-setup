@@ -8,7 +8,6 @@ machine:
     VOLUME_MAPPING: ~/nectar-stack/couchbase/node1:/opt/couchbase/var
     ADMIN_LOGIN: admin
     ADMIN_PASSWORD: admin001*
-    # ADMIN_PASSWORD: s00pers3cr3ty*
 
 general:
   artifacts:
@@ -29,7 +28,7 @@ dependencies:
 
 test:
   override:
-    - docker run -v $VOLUME_MAPPING --name couchbase -e "ADMIN_LOGIN=admin" -e "ADMIN_PASSWORD=s00pers3cr3ty*" -d -p 8091:8091 -p 8093:8093 -p 8092:8092 -p 11210:11210 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
+    - docker run -v $VOLUME_MAPPING --name couchbase -e "ADMIN_LOGIN=${ADMIN_LOGIN}" -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" -d -p 8091:8091 -p 8093:8093 -p 8092:8092 -p 11210:11210 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
     # - docker run -v $VOLUME_MAPPING --name couchbase -e "ADMIN_LOGIN=${ADMIN_LOGIN}" -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" -d -p 8091:8091 -p 8093:8093 -p 8092:8092 -p 11210:11210 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
     # - docker-compose up -d; sleep 500
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
