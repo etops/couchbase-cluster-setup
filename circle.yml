@@ -8,6 +8,7 @@ machine:
     VOLUME_MAPPING: ~/nectar-stack/couchbase/node1:/opt/couchbase/var
     ADMIN_LOGIN: admin
     ADMIN_PASSWORD: admin001*
+    # WATCH OUT: admin username/password must match dockup below.
 
 general:
   artifacts:
