@@ -139,7 +139,7 @@ else
         --cluster-port=$PORT \
         --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --cluster-index-ramsize=$INDEX_RAM_QUOTA \
-	--index-storage-setting=default \
+	    --index-storage-setting=default \
         --services=data,index,query
   
     # Create bucket for model data

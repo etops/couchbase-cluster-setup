@@ -7,7 +7,8 @@ machine:
     LOCAL_MAPPING: ~/nectar-stack/couchbase/node1
     VOLUME_MAPPING: ~/nectar-stack/couchbase/node1:/opt/couchbase/var
     ADMIN_LOGIN: admin
-    ADMIN_PASSWORD: s00pers3cr3ty*
+    ADMIN_PASSWORD: admin001*
+    # ADMIN_PASSWORD: s00pers3cr3ty*
 
 general:
   artifacts:
