@@ -25,6 +25,9 @@ dependencies:
     - docker pull etops/dockup:latest
     - mkdir -p $LOCAL_MAPPING
     - mkdir test-queries
+    - curl https://packages.couchbase.com/releases/4.6.1/couchbase-server-enterprise_4.6.1-ubuntu14.04_amd64.deb -o couchbase.deb
+    - dpkg -i couchbase.deb
+    - which cbq
     - docker run -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" -e "BACKUP_NAME=couchbase" -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" -e "PATHS_TO_BACKUP=/opt/couchbase/var" -e "RESTORE=true" -e "S3_BUCKET_NAME=nectar-circleci" -v $VOLUME_MAPPING etops/dockup:latest
 
 test:
