@@ -156,6 +156,7 @@ else
     couchbase-cli bucket-edit -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$MODEL_BUCKET \
+        --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=high
 
     # Do not include index, query services because they 
@@ -172,6 +173,7 @@ else
     couchbase-cli bucket-edit -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$FILE_BUCKET \
+        --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=low
 
     echo "Configuring index settings..."
