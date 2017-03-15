@@ -5,7 +5,7 @@ echo `date`
 
 DIR=./test-queries
 AUTH="$ADMIN_LOGIN:$ADMIN_PASSWORD"
-CREDS='creds={"user":"'$ADMIN_LOGIN'","pass":"'$ADMIN_PASSWORD'"}'
+CREDS='creds={"user":"local:models","pass":"'$ADMIN_PASSWORD'"}'
 URL=http://localhost:8093/query/service
 
 curl -v -u $AUTH http://localhost:8091/pools | python -m json.tool > $DIR/pools.json
