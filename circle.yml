@@ -34,6 +34,7 @@ test:
   override:    
     - docker run -v $VOLUME_MAPPING --name couchbase -e "ADMIN_LOGIN=${ADMIN_LOGIN}" -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" -d -p 8091:8091 -p 8093:8093 -p 8092:8092 -p 11210:11210 $IMAGE_NAME:$CIRCLE_BUILD_NUM; sleep 60
     - ls -al $LOCAL_MAPPING
+    - cd $LOCAL_MAPPING && echo `pwd` && ls -al `pwd`
     - curl --retry 20 --retry-delay 10 -v http://localhost:8091 -C -
     - ./test/test-queries.sh
     - docker ps
