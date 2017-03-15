@@ -11,15 +11,15 @@ couchbase-init:
         - ADMIN_PASSWORD
     restart: always
     volumes:
-        - ~/couchbase/node1:/opt/couchbase/var
-couchbase:
-    build: .
-    links:
-        - couchbase-init:couchbase
-    environment: 
-        - CLUSTER_RAM_QUOTA=1024
-        - ADMIN_LOGIN
-        - ADMIN_PASSWORD
-    restart: always
+        - ~/nectar-stack/couchbase/node1:/opt/couchbase/var
+# couchbase:
+#     build: .
+#     links:
+#         - couchbase-init:couchbase
+#     environment: 
+#         - CLUSTER_RAM_QUOTA=1024
+#         - ADMIN_LOGIN
+#         - ADMIN_PASSWORD
+#     restart: always
     
     

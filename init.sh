@@ -106,7 +106,7 @@ if [ -n "${COUCHBASE_NAME}" ]; then
     echo "Adding myself to the cluster, and rebalancing...."    
     # rebalance
     couchbase-cli rebalance -c $MASTER_HOST:$MASTER_PORT \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --server-add=$ip:$PORT \
         --server-add-username=$ADMIN_LOGIN \
         --server-add-password=$ADMIN_PASSWORD \
@@ -115,7 +115,7 @@ if [ -n "${COUCHBASE_NAME}" ]; then
 
    echo "Listing servers"
    couchbase-cli server-list -c $ip:$PORT \
-       -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD"
 
    echo "Waiting until resulting cluster is healthy..."
    wait_for_healthy
@@ -133,20 +133,19 @@ else
     # a cluster is provisioned, some parameters (like services) cannot
     # be changed.
     echo "Initializing cluster configuration ..."
-    couchbase-cli cluster-init -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
-        --cluster-username=${ADMIN_LOGIN} \
-        --cluster-password=${ADMIN_PASSWORD} \
+    couchbase-cli cluster-init -c $HOST:8091 \
+        --cluster-username="$ADMIN_LOGIN" \
+        --cluster-password="$ADMIN_PASSWORD" \
         --cluster-port=$PORT \
         --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --cluster-index-ramsize=$INDEX_RAM_QUOTA \
-	--index-storage-setting=default \
+	    --index-storage-setting=default \
         --services=data,index,query
   
     # Create bucket for model data
     echo "Creating bucket " $MODEL_BUCKET " ..."
     couchbase-cli bucket-create -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$MODEL_BUCKET \
         --bucket-type=couchbase \
         --bucket-ramsize=$MODEL_BUCKET_RAMSIZE \
@@ -155,15 +154,16 @@ else
     # Set model bucket to be high priority
     echo "Setting " $MODEL_BUCKET " bucket to be high priority..."
     couchbase-cli bucket-edit -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$MODEL_BUCKET \
+        --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=high
 
     # Do not include index, query services because they 
     # require memory and aren't needed.
     echo "Creating bucket " $FILE_BUCKET " ..."
     couchbase-cli bucket-create -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$FILE_BUCKET \
         --bucket-type=couchbase \
         --bucket-ramsize=$FILE_BUCKET_RAMSIZE \
@@ -171,13 +171,14 @@ else
 
     echo "Setting " $FILE_BUCKET " bucket to be low priority..."
     couchbase-cli bucket-edit -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$FILE_BUCKET \
+        --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=low
 
     echo "Configuring index settings..."
     couchbase-cli setting-index -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --index-max-rollback-points=5 \
         --index-memory-snapshot-interval=200 \
         --index-threads=2          
@@ -185,11 +186,11 @@ else
     # For debug purposes in logs, show buckets.
     echo "Inspecting bucket list..."
     couchbase-cli bucket-list -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD"
 
     echo "Inspecting server list..."
     couchbase-cli server-list -c $HOST \
-        -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD"
 
     echo "Cluster info after startup..."
     curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/pools
@@ -234,6 +235,7 @@ else
     wait_for_healthy
 
     echo "Finished with cluster setup/config."
+    echo `date`
 fi
         
 wait
