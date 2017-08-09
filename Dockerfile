@@ -5,7 +5,7 @@ MAINTAINER Nectar Financial AG
 ENV ADMIN_LOGIN $ADMIN_LOGIN
 ENV ADMIN_PASSWORD $ADMIN_PASSWORD
 
-COPY timeseries_view.ddoc
+COPY timeseries_view.ddoc /
 
 COPY init.sh /
 RUN chmod +x /init.sh
