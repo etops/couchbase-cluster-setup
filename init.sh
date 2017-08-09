@@ -239,7 +239,7 @@ else
     curl -XPUT \
         -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" \
         -H 'Content-Type: application/json' \
-        http://$HOST:$PORT/$MODEL_BUCKET/_design/timeseries \
+        http://$HOST:8092/$MODEL_BUCKET/_design/timeseries \
         -d @timeseries_view.ddoc
 
     echo "Finished with cluster setup/config."
