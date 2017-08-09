@@ -202,7 +202,7 @@ else
     curl -x PUT \
         -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" \
         -H 'Content-Type: application/json' \
-        http://$HOST:$PORT/models/_design/timeseries \
+        http://$HOST:$PORT/$MODEL_BUCKET/_design/timeseries \
         -d @timeseries_view.ddoc
 
     # Email alerts (not used, TBD)
