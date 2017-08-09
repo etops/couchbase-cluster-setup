@@ -1,3 +1,6 @@
+// This is just a formatted representation of the view in timeseries_view.ddoc
+// EDITING THIS FILE WILL HAVE NO AFFECT!
+
 function (doc, meta) {
   if (doc._type == 'CustodyAccountPosition') {
     var realDate = dateToArray(doc.realDate);
