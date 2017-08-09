@@ -198,6 +198,13 @@ else
     echo "Cluster internal settings after startup..."
     curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/internalSettings
 
+    echo "Creating views..."
+    curl -x PUT \
+        -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" \
+        -H 'Content-Type: application/json' \
+        http://$HOST:$PORT/models/_design/timeseries
+        -d @timeseries_view.ddoc
+
     # Email alerts (not used, TBD)
     # http://developer.couchbase.com/documentation/server/current/cli/cbcli/setting-alert.html
     # couchbase-cli setting-alert -c $HOST \
