@@ -198,6 +198,7 @@ else
     echo "Cluster internal settings after startup..."
     curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$HOST:$PORT/internalSettings
 
+
     # Email alerts (not used, TBD)
     # http://developer.couchbase.com/documentation/server/current/cli/cbcli/setting-alert.html
     # couchbase-cli setting-alert -c $HOST \
@@ -233,6 +234,13 @@ else
     # couchbase-cli rebalance -c $HOST -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
 
     wait_for_healthy
+
+    echo "Creating views..."
+    curl -XPUT \
+        -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" \
+        -H 'Content-Type: application/json' \
+        http://$HOST:8092/$MODEL_BUCKET/_design/timeseries \
+        -d @timeseries_view.ddoc
 
     echo "Finished with cluster setup/config."
     echo `date`
