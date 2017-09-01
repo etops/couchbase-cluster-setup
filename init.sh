@@ -90,7 +90,7 @@ fi
 RAWDATA_BUCKET=rawdata
 
 if [ -z "$RAWDATA_BUCKET_RAMSIZE" ] ; then
-   echo "Missing file bucket ramsize; setting to 128"
+   echo "Missing file bucket ramsize; setting to 256"
    RAWDATA_BUCKET_RAMSIZE=256 ;
 fi
 
