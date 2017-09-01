@@ -18,12 +18,6 @@ echo "==============================================================="
 HOST=localhost
 PORT=8091
 
-if [ -n "$COUCHBASE_INIT_1_PORT_8091_TCP_ADDR" ] ; then    
-    MASTER_HOST=$COUCHBASE_INIT_1_PORT_8091_TCP_ADDR
-    MASTER_PORT=$COUCHBASE_INIT_1_PORT_8091_TCP_PORT
-    echo "I am a slave node connecting to " $MASTER_HOST ":" $MASTER_PORT
-fi
-
 wait_for_success() {
     "$@"
     while [ $? -ne 0 ]
@@ -100,9 +94,13 @@ if [ -z "$RAWDATA_BUCKET_RAMSIZE" ] ; then
    RAWDATA_BUCKET_RAMSIZE=256 ;
 fi
 
+echo "Type: $TYPE"
+
 # if this node should reach an existing server (a couchbase link is defined)  => env is set by docker compose link
-if [ -n "${COUCHBASE_NAME}" ]; then
-    ip=`hostname --ip-address`
+if [ "$TYPE" = "WORKER" ]; then
+    #IP=`hostname -s`
+    ip=`hostname -I | cut -d ' ' -f1`
+    echo "ip: " $ip
 
     echo "Launching Couchbase Slave Node " $COUCHBASE_NAME " on " $ip
     /entrypoint.sh couchbase-server &
@@ -115,12 +113,11 @@ if [ -n "${COUCHBASE_NAME}" ]; then
      
     echo "Adding myself to the cluster, and rebalancing...."    
     # rebalance
-    couchbase-cli rebalance -c $MASTER_HOST:$MASTER_PORT \
+    couchbase-cli server-add -c $COUCHBASE_MASTER:$PORT \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --server-add=$ip:$PORT \
         --server-add-username=$ADMIN_LOGIN \
         --server-add-password=$ADMIN_PASSWORD \
-        --index-storage-setting=default \
         --services=data,index,query
 
    echo "Listing servers"
