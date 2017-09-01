@@ -112,6 +112,101 @@ suggests keeping number of total buckets to a minimum, ideally 5 or less, never 
 They recommend starting in one bucket and growing out as necessary.
 
 
+example docker swarm
+
+```
+version: "3.3"
+
+services:
+  couchbase-master:
+    environment:
+      - TYPE=MASTER
+      - CLUSTER_RAM_QUOTA=5120
+      - ADMIN_LOGIN=admin
+      - ADMIN_PASSWORD=<pw>
+    image: etops/couchbase:4.6.2-rawdata
+    ports:
+      - target: 4369
+        published: 4369
+        protocol: tcp
+        mode: host
+      - target: 8091
+        published: 8091
+        protocol: tcp
+        mode: host
+      - target: 8092
+        published: 8092
+        protocol: tcp
+        mode: host
+      - target: 8093
+        published: 8093
+        protocol: tcp
+        mode: host
+      - target: 11210
+        published: 11210
+        protocol: tcp
+        mode: host
+    volumes:
+      - type: bind
+        source: /home/ubuntu/stack/rawdata/couchbase/data
+        target: /opt/couchbase/var
+    networks:
+      - cbrd
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.app_role == rawdata]
+      restart_policy:
+        condition: on-failure
+
+  couchbase-worker:
+    environment:
+      - TYPE=WORKER
+      - COUCHBASE_MASTER=159.100.242.154
+      - ADMIN_LOGIN=admin
+      - ADMIN_PASSWORD=<pw>
+    image: etops/couchbase:4.6.2-rawdata
+    ports:
+      - target: 4369
+        published: 4369
+        protocol: tcp
+        mode: host
+      - target: 8091
+        published: 8091
+        protocol: tcp
+        mode: host
+      - target: 8092
+        published: 8092
+        protocol: tcp
+        mode: host
+      - target: 8093
+        published: 8093
+        protocol: tcp
+        mode: host
+      - target: 11210
+        published: 11210
+        protocol: tcp
+        mode: host
+    volumes:
+      - type: bind
+        source: /home/ubuntu/stack/rawdata/couchbase/data
+        target: /opt/couchbase/var
+    networks:
+      - cbrd
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.app_role == rawdata]
+      restart_policy:
+        condition: on-failure
+
+networks:
+  cbrd:
+```
+
+
 Minimum Requirements
 ---------------------------
 
