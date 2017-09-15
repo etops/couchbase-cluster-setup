@@ -268,6 +268,12 @@ else
         http://$HOST:8092/$MODEL_BUCKET/_design/timeseries \
         -d @timeseries_view.ddoc
 
+    curl -XPUT \
+        -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" \
+        -H 'Content-Type: application/json' \
+        http://$HOST:8092/$RAWDATA_BUCKET/_design/timeseries \
+        -d @timeseries_view_raw.ddoc
+
     echo "Finished with cluster setup/config."
     echo `date`
 fi

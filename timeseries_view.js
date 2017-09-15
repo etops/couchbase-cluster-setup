@@ -3,42 +3,53 @@
 
 function (doc, meta) {
   if (doc._type == 'CustodyAccountPosition') {
-    var realDate = dateToArray(doc.realDate);
-    var valuedDate = dateToArray(doc.processing.valuedDate);
-    var instrumentRef = [doc.instrumentRef.$ref];
-    var custodyAccountRef = [doc.custodyAccountRef.$ref];
-    emit(instrumentRef.concat(custodyAccountRef).concat(realDate).concat(valuedDate), doc.oid);
+    if (!doc.nextRef) {
+      var realDate = dateToArray(doc.realDate).slice(0, 3);
+      var instrumentRef = [doc.instrumentRef.$ref];
+      var custodyAccountRef = [doc.custodyAccountRef.$ref];
+      emit([doc._type].concat(custodyAccountRef).concat(realDate), null);
+    }
   } else if (doc._type == 'PortfolioPosition') {
-    var realDate = dateToArray(doc.realDate);
-    var valuedDate = dateToArray(doc.processing.valuedDate);
-    var instrumentRef = [doc.instrumentRef.$ref];
-    var portfolioRef = [doc.portfolioRef.$ref];
-    emit(instrumentRef.concat(portfolioRef).concat(realDate).concat(valuedDate), doc.oid);
+    if (!doc.nextRef) {
+      var realDate = dateToArray(doc.realDate).slice(0, 3);
+      var instrumentRef = [doc.instrumentRef.$ref];
+      var portfolioRef = [doc.portfolioRef.$ref];
+      emit([doc._type].concat(portfolioRef).concat(realDate), null);
+    }
   } else if (doc._type == 'PortfolioSeries') {
-    var realDate = dateToArray(doc.realDate);
-    var valuedDate = dateToArray(doc.processing.valuedDate);
-    var portfolioRef = [doc.portfolioRef.$ref];
-    emit(portfolioRef.concat(realDate).concat(valuedDate), doc.oid);
+    if (!doc.nextRef) {
+      var realDate = dateToArray(doc.realDate).slice(0, 3);
+      var portfolioRef = [doc.portfolioRef.$ref];
+      emit([doc._type].concat(portfolioRef).concat(realDate), null);
+    }
   } else if (doc._type == 'ForexSpot') {
-    var realDate = dateToArray(doc.realDate);
-    var spotDate = dateToArray(doc.spotDate);
-    var fromFX = [doc.fromFX];
-    var toFX = [doc.toFX];
-
-    if (!spotDate) {
-      spotDate = realDate;
+    if (!doc.nextRef) {
+      var realDate = dateToArray(doc.realDate).slice(0, 3);
+      var fromFX = [doc.fromFX];
+      var toFX = [doc.toFX];
+      emit([doc._type].concat(fromFX).concat(toFX).concat(realDate), null);
     }
-
-    emit(fromFX.concat(toFX).concat(realDate).concat(spotDate), doc.oid);
+  } else if (doc._type == 'ForexForwardSpot') {
+    if (!doc.nextRef) {
+      var realDate = dateToArray(doc.realDate).slice(0, 3);
+      var fromFX = [doc.fromFX];
+      var toFX = [doc.toFX];
+      emit([doc._type].concat(fromFX).concat(toFX).concat(realDate), null);
+    }
   } else if (doc._type == 'Price') {
-    var realDate = dateToArray(doc.realDate);
-    var quotedDate = dateToArray(doc.spotDate);
-    var instrumentRef = [doc.instrumentRef.$ref];
-
-    if (!quotedDate) {
-      quotedDate = realDate;
+    if (!doc.nextRef) {
+      var realDate = dateToArray(doc.realDate).slice(0, 3);
+      var instrumentRef = [doc.instrumentRef.$ref];
+      emit([doc._type].concat(instrumentRef).concat(realDate), null);
     }
-
-    emit(instrumentRef.concat(realDate).concat(quotedDate), doc.oid);
+  } else if (doc._type == 'Transaction') {
+    var idx;
+    for(idx = 0; idx < doc.details.length; idx++) {
+      var custodyAccount = [doc.details[idx].custodyAccountRef.$ref];
+      var date = doc.details[idx].tradeDate || doc.details[0].tradeDate || doc.ticketDate;
+      var realDate = dateToArray(date).slice(0, 3);
+      emit([doc._type].concat(custodyAccount).concat(realDate), null);
+    }
   }
 }
+
