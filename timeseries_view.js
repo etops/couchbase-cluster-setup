@@ -8,6 +8,7 @@ function (doc, meta) {
       var instrumentRef = [doc.instrumentRef.$ref];
       var custodyAccountRef = [doc.custodyAccountRef.$ref];
       emit([doc._type].concat(custodyAccountRef).concat(realDate), null);
+      emit([doc._type].concat(instrumentRef).concat(custodyAccountRef).concat(realDate), null);
     }
   } else if (doc._type == 'PortfolioPosition') {
     if (!doc.nextRef) {
@@ -15,6 +16,7 @@ function (doc, meta) {
       var instrumentRef = [doc.instrumentRef.$ref];
       var portfolioRef = [doc.portfolioRef.$ref];
       emit([doc._type].concat(portfolioRef).concat(realDate), null);
+      emit([doc._type].concat(instrumentRef).concat(portfolioRef).concat(realDate), null);
     }
   } else if (doc._type == 'PortfolioSeries') {
     if (!doc.nextRef) {
