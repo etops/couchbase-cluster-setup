@@ -18,12 +18,6 @@ echo "==============================================================="
 HOST=localhost
 PORT=8091
 
-if [ -n "$COUCHBASE_INIT_1_PORT_8091_TCP_ADDR" ] ; then    
-    MASTER_HOST=$COUCHBASE_INIT_1_PORT_8091_TCP_ADDR
-    MASTER_PORT=$COUCHBASE_INIT_1_PORT_8091_TCP_PORT
-    echo "I am a slave node connecting to " $MASTER_HOST ":" $MASTER_PORT
-fi
-
 wait_for_success() {
     "$@"
     while [ $? -ne 0 ]
@@ -90,9 +84,23 @@ if [ -z "$FILE_BUCKET_RAMSIZE" ] ; then
    FILE_BUCKET_RAMSIZE=128 ;
 fi
 
+# File bucket configuration options.
+# Memory can be much lower because it's not important to 
+# keep a resident set in memory for fast query/access.
+RAWDATA_BUCKET=rawdata
+
+if [ -z "$RAWDATA_BUCKET_RAMSIZE" ] ; then
+   echo "Missing file bucket ramsize; setting to 256"
+   RAWDATA_BUCKET_RAMSIZE=256 ;
+fi
+
+echo "Type: $TYPE"
+
 # if this node should reach an existing server (a couchbase link is defined)  => env is set by docker compose link
-if [ -n "${COUCHBASE_NAME}" ]; then
-    ip=`hostname --ip-address`
+if [ "$TYPE" = "WORKER" ]; then
+    #IP=`hostname -s`
+    ip=`hostname -I | cut -d ' ' -f1`
+    echo "ip: " $ip
 
     echo "Launching Couchbase Slave Node " $COUCHBASE_NAME " on " $ip
     /entrypoint.sh couchbase-server &
@@ -105,12 +113,11 @@ if [ -n "${COUCHBASE_NAME}" ]; then
      
     echo "Adding myself to the cluster, and rebalancing...."    
     # rebalance
-    couchbase-cli rebalance -c $MASTER_HOST:$MASTER_PORT \
+    couchbase-cli server-add -c $COUCHBASE_MASTER:$PORT \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --server-add=$ip:$PORT \
         --server-add-username=$ADMIN_LOGIN \
         --server-add-password=$ADMIN_PASSWORD \
-        --index-storage-setting=default \
         --services=data,index,query
 
    echo "Listing servers"
@@ -159,6 +166,7 @@ else
         --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=high
 
+
     # Do not include index, query services because they 
     # require memory and aren't needed.
     echo "Creating bucket " $FILE_BUCKET " ..."
@@ -181,7 +189,25 @@ else
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --index-max-rollback-points=5 \
         --index-memory-snapshot-interval=200 \
-        --index-threads=2          
+        --index-threads=2    
+
+
+    # Create bucket for rawdata data
+    echo "Creating bucket " $RAWDATA_BUCKET " ..."
+    couchbase-cli bucket-create -c $HOST \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
+        --bucket=$RAWDATA_BUCKET \
+        --bucket-type=couchbase \
+        --bucket-ramsize=$RAWDATA_BUCKET_RAMSIZE \
+        --wait 
+
+    # Set rawdata bucket to be high priority
+    echo "Setting " $RAWDATA_BUCKET " bucket to be high priority..."
+    couchbase-cli bucket-edit -c $HOST \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
+        --bucket=$RAWDATA_BUCKET \
+        --bucket-password="$ADMIN_PASSWORD" \
+        --bucket-priority=high      
 
     # For debug purposes in logs, show buckets.
     echo "Inspecting bucket list..."
@@ -241,6 +267,12 @@ else
         -H 'Content-Type: application/json' \
         http://$HOST:8092/$MODEL_BUCKET/_design/timeseries \
         -d @timeseries_view.ddoc
+
+    curl -XPUT \
+        -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" \
+        -H 'Content-Type: application/json' \
+        http://$HOST:8092/$RAWDATA_BUCKET/_design/timeseries \
+        -d @timeseries_view_raw.ddoc
 
     echo "Finished with cluster setup/config."
     echo `date`
