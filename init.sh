@@ -74,23 +74,13 @@ if [ -z "$MODEL_BUCKET_RAMSIZE" ] ; then
    MODEL_BUCKET_RAMSIZE=256 ;
 fi
 
-# File bucket configuration options.
-# Memory can be much lower because it's not important to 
-# keep a resident set in memory for fast query/access.
-FILE_BUCKET=files
-
-if [ -z "$FILE_BUCKET_RAMSIZE" ] ; then
-   echo "Missing file bucket ramsize; setting to 128"
-   FILE_BUCKET_RAMSIZE=128 ;
-fi
-
-# File bucket configuration options.
+# Rawdata bucket configuration options.
 # Memory can be much lower because it's not important to 
 # keep a resident set in memory for fast query/access.
 RAWDATA_BUCKET=rawdata
 
 if [ -z "$RAWDATA_BUCKET_RAMSIZE" ] ; then
-   echo "Missing file bucket ramsize; setting to 256"
+   echo "Missing rawdata bucket ramsize; setting to 256"
    RAWDATA_BUCKET_RAMSIZE=256 ;
 fi
 
@@ -166,33 +156,7 @@ else
         --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=high
 
-
-    # Do not include index, query services because they 
-    # require memory and aren't needed.
-    echo "Creating bucket " $FILE_BUCKET " ..."
-    couchbase-cli bucket-create -c $HOST \
-        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
-        --bucket=$FILE_BUCKET \
-        --bucket-type=couchbase \
-        --bucket-ramsize=$FILE_BUCKET_RAMSIZE \
-        --wait 
-
-    echo "Setting " $FILE_BUCKET " bucket to be low priority..."
-    couchbase-cli bucket-edit -c $HOST \
-        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
-        --bucket=$FILE_BUCKET \
-        --bucket-password="$ADMIN_PASSWORD" \
-        --bucket-priority=low
-
-    echo "Configuring index settings..."
-    couchbase-cli setting-index -c $HOST \
-        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
-        --index-max-rollback-points=5 \
-        --index-memory-snapshot-interval=200 \
-        --index-threads=2    
-
-
-    # Create bucket for rawdata data
+     # Create bucket for rawdata data
     echo "Creating bucket " $RAWDATA_BUCKET " ..."
     couchbase-cli bucket-create -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
@@ -207,7 +171,16 @@ else
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$RAWDATA_BUCKET \
         --bucket-password="$ADMIN_PASSWORD" \
-        --bucket-priority=high      
+        --bucket-priority=high     
+
+
+    echo "Configuring index settings..."
+    couchbase-cli setting-index -c $HOST \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
+        --index-max-rollback-points=5 \
+        --index-memory-snapshot-interval=200 \
+        --index-threads=2    
+
 
     # For debug purposes in logs, show buckets.
     echo "Inspecting bucket list..."
