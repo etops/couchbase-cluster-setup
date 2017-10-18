@@ -15,7 +15,9 @@ function (doc, meta) {
       var realDate = dateToArray(doc.realDate).slice(0, 3);
       var instrumentRef = [doc.instrumentRef.$ref];
       var portfolioRef = [doc.portfolioRef.$ref];
+      var namespace = meta.id.split('::')[0];
       emit([doc._type].concat(portfolioRef).concat(realDate), null);
+      emit([doc._type + 'ByInstrument'].concat(namespace).concat(instrumentRef).concat(realDate), null);
       emit([doc._type].concat(instrumentRef).concat(portfolioRef).concat(realDate), null);
     }
   } else if (doc._type == 'PortfolioSeries') {
@@ -54,4 +56,3 @@ function (doc, meta) {
     }
   }
 }
-
