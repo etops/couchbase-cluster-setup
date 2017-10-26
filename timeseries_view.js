@@ -54,6 +54,7 @@ function (doc, meta) {
       var date = doc.details[idx].tradeDate || doc.details[0].tradeDate || doc.ticketDate;
       var realDate = dateToArray(date).slice(0, 3);
       emit([doc._type].concat(custodyAccount).concat(realDate), idx);
+      emit([doc._type + 'ByDetail'].concat(custodyAccount).concat(idx).concat(realDate), idx);
     }
   }
 }
