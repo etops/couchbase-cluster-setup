@@ -3,6 +3,20 @@ Couchbase Cluster with docker and docker-compose
 
 Hint: on Linux use sudo before docker.
 
+Configure
+-----------
+Cluster accepts the following parameters:
+
+- `ADMIN_LOGIN`
+- `ADMIN_PASSWORD` (must be minimum 8 chars with special chars)
+- `CLUSTER_RAM_QUOTA` (recommended minimum 2048)
+- `INDEX_RAM_QUOTA` (recommended minimum 256)
+- `MODEL_BUCKET_RAMSIZE` (recommended minimum 256)
+- `FILE_BUCKET_RAMSIZE` (recommended minimum 256)
+
+For what the couchbase memory parameters mean, see 
+[Couchbase Cluster Settings documentation](http://developer.couchbase.com/documentation/server/current/settings/cluster-settings.html)
+
 Run
 ---
 1. ```git clone https://github.com/etops/couchbase-cluster-setup.git```
@@ -96,3 +110,109 @@ Cluster Design Considerations
 suggests keeping number of total buckets to a minimum, ideally 5 or less, never more than 10.
 
 They recommend starting in one bucket and growing out as necessary.
+
+
+example docker swarm
+
+```
+version: "3.3"
+
+services:
+  couchbase-master:
+    environment:
+      - TYPE=MASTER
+      - CLUSTER_RAM_QUOTA=5120
+      - ADMIN_LOGIN=admin
+      - ADMIN_PASSWORD=<pw>
+    image: etops/couchbase:4.6.2-rawdata
+    ports:
+      - target: 4369
+        published: 4369
+        protocol: tcp
+        mode: host
+      - target: 8091
+        published: 8091
+        protocol: tcp
+        mode: host
+      - target: 8092
+        published: 8092
+        protocol: tcp
+        mode: host
+      - target: 8093
+        published: 8093
+        protocol: tcp
+        mode: host
+      - target: 11210
+        published: 11210
+        protocol: tcp
+        mode: host
+    volumes:
+      - type: bind
+        source: /home/ubuntu/stack/rawdata/couchbase/data
+        target: /opt/couchbase/var
+    networks:
+      - cbrd
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.app_role == rawdata]
+      restart_policy:
+        condition: on-failure
+
+  couchbase-worker:
+    environment:
+      - TYPE=WORKER
+      - COUCHBASE_MASTER=159.100.242.154
+      - ADMIN_LOGIN=admin
+      - ADMIN_PASSWORD=<pw>
+    image: etops/couchbase:4.6.2-rawdata
+    ports:
+      - target: 4369
+        published: 4369
+        protocol: tcp
+        mode: host
+      - target: 8091
+        published: 8091
+        protocol: tcp
+        mode: host
+      - target: 8092
+        published: 8092
+        protocol: tcp
+        mode: host
+      - target: 8093
+        published: 8093
+        protocol: tcp
+        mode: host
+      - target: 11210
+        published: 11210
+        protocol: tcp
+        mode: host
+    volumes:
+      - type: bind
+        source: /home/ubuntu/stack/rawdata/couchbase/data
+        target: /opt/couchbase/var
+    networks:
+      - cbrd
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.app_role == rawdata]
+      restart_policy:
+        condition: on-failure
+
+networks:
+  cbrd:
+```
+
+
+Minimum Requirements
+---------------------------
+
+Couchbase's published guidance [can be found here](http://developer.couchbase.com/documentation/server/current/install/pre-install.html).
+
+Deployment Best Practices
+---------------------------
+
+[See notes here](https://hub.docker.com/r/couchbase/server/).
