@@ -1,4 +1,4 @@
-FROM couchbase/server:4.6.4
+FROM couchbase/server:5.0.1
 
 MAINTAINER Nectar Financial AG
 
