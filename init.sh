@@ -103,8 +103,10 @@ if [ "$TYPE" = "WORKER" ]; then
     echo "Waiting for slave to be ready..."
     wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $ip:$PORT/pools/default -C -
     
+    curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$HOSTNAME
+    
     echo "Waiting for master to be ready..."
-    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $MASTER_HOST:$MASTER_PORT/pools/default -C -
+    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $COUCHBASE_MASTER:$PORT/pools/default -C -
      
     echo "Adding myself to the cluster, and rebalancing...."    
     # rebalance
@@ -129,6 +131,8 @@ else
     # This is not sufficient to know that the cluster is healthy and ready to accept queries,
     # but it indicates the REST API is ready to take configuration settings.
     wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
+    
+    curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$HOSTNAME
     
     # init the cluster
     # It's very important to get these arguments right, because after
