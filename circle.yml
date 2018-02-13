@@ -49,8 +49,8 @@ deployment:
       - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
       - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
   hub:
-    branch: master
+    branch: services-configurable
     commands:
-      - docker tag    $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
-      - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
+      - docker tag    $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/sc-$IMAGE_NAME:$CIRCLE_BUILD_NUM
+      - docker push $DOCKER_PRIVATE_REPO/sc-$IMAGE_NAME:$CIRCLE_BUILD_NUM
       
