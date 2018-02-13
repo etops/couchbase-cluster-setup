@@ -84,6 +84,11 @@ if [ -z "$RAWDATA_BUCKET_RAMSIZE" ] ; then
    RAWDATA_BUCKET_RAMSIZE=256 ;
 fi
 
+if [ -z "$SERVICES" ] ; then
+   echo "Missing SERVICES, setting them to data,index,query"
+   SERVICES=data,index,query ;
+fi
+
 echo "Type: $TYPE"
 
 # if this node should reach an existing server (a couchbase link is defined)  => env is set by docker compose link
@@ -108,7 +113,7 @@ if [ "$TYPE" = "WORKER" ]; then
         --server-add=$ip:$PORT \
         --server-add-username=$ADMIN_LOGIN \
         --server-add-password=$ADMIN_PASSWORD \
-        --services=data,index,query
+        --services=$SERVICES
 
    echo "Listing servers"
    couchbase-cli server-list -c $ip:$PORT \
@@ -137,7 +142,7 @@ else
         --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --cluster-index-ramsize=$INDEX_RAM_QUOTA \
 	    --index-storage-setting=default \
-        --services=data,index,query
+        --services=$SERVICES
   
     # Create bucket for model data
     echo "Creating bucket " $MODEL_BUCKET " ..."
