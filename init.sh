@@ -122,7 +122,8 @@ if [ "$TYPE" = "WORKER" ]; then
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD"
 
    echo "Waiting until resulting cluster is healthy..."
-   wait_for_healthy
+   # wait_for_healthy
+   echo "add it manually atm"
 else
     echo "Launching Couchbase..."
     /entrypoint.sh couchbase-server &
