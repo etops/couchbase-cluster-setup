@@ -34,9 +34,9 @@ wait_for_healthy() {
     QHOST=$HOST
     QPORT=$PORT
 
-    if [ -n "$MASTER_HOST" ] ; then 
-        QHOST=$MASTER_HOST
-        QPORT=$MASTER_PORT ;
+    if [ -n "$COUCHBASE_MASTER" ] ; then 
+        QHOST=$COUCHBASE_MASTER
+        QPORT=PORT ;
     fi
 
     while [[ "$status" != *"healthy"* ]]
