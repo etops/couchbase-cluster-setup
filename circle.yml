@@ -53,4 +53,5 @@ deployment:
     commands:
       - docker tag    $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
       - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
-      
+      - docker tag    $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:nightly
+      - docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:nightly
