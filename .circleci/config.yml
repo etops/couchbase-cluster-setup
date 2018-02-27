@@ -1,0 +1,212 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/etops/couchbase-cluster-setup
+    parallelism: 1
+    environment:
+      DOCKER_PRIVATE_REPO: etops
+      IMAGE_NAME: couchbase
+      LOCAL_MAPPING: /home/ubuntu/nectar-stack/couchbase/node1
+      VOLUME_MAPPING: /home/ubuntu/nectar-stack/couchbase/node1:/opt/couchbase/var
+      ADMIN_LOGIN: admin
+      ADMIN_PASSWORD: admin001*
+      # WATCH OUT: admin username/password must match dockup below.
+    docker:
+      - image: docker:latest
+
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      - run:
+          name: Build application Docker image
+          command: docker build --cache-from=$IMAGE_NAME -t $IMAGE_NAME .
+          no_output_timeout: 30m
+      - run:
+          name: Save Docker image
+          command: |
+            mkdir -p ~/caches
+            docker save -o ~/caches/$IMAGE_NAME.tar $IMAGE_NAME
+          no_output_timeout: 30m
+
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - etops
+            - caches
+
+  test:
+    working_directory: ~/etops/couchbase-cluster-setup
+    parallelism: 1
+    environment:
+      DOCKER_PRIVATE_REPO: etops
+      IMAGE_NAME: couchbase
+    machine: true
+
+    steps:
+      - run:
+          name: Pull etops/dockup:latest
+          command: docker pull etops/dockup:latest
+          background: true
+
+      - attach_workspace:
+          at: ~/
+
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i ~/caches/$IMAGE_NAME.tar
+
+      - run:
+          name: Run etops/dockup:latest
+          command: |
+            mkdir -p $LOCAL_MAPPING test-queries
+            echo "Volume mapping $VOLUME_MAPPING"
+            echo "Local mapping $LOCAL_MAPPING"
+            docker run \
+              -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" \
+              -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" \
+              -e "BACKUP_NAME=couchbase" \
+              -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" \
+              -e "PATHS_TO_BACKUP=/opt/couchbase/var" \
+              -e "RESTORE=true" \
+              -e "S3_BUCKET_NAME=nectar-circleci" \
+              -v $VOLUME_MAPPING \
+              etops/dockup:latest
+
+      - run:
+          name: Run couchbase
+          command: |
+            docker run --name couchbase -d \
+              -e "ADMIN_LOGIN=${ADMIN_LOGIN}" \
+              -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" \
+              -p 8091:8091 \
+              -p 8093:8093 \
+              -p 8092:8092 \
+              -p 11210:11210 \
+              -v $VOLUME_MAPPING \
+              $IMAGE_NAME:$CIRCLE_BUILD_NUM
+
+      - run:
+          name: Check if couchbase is reachable
+          command: curl --retry 30 --retry-delay 10 -v http://localhost:8091 -C -
+
+      - run:
+          name: Run test queries
+          command: ./test/test-queries.sh
+      - run:
+          name: Print logs
+          command: |
+            docker ps
+            docker logs --tail=all couchbase > couchbase.log
+            # Show files that are saved on the volume
+            find $LOCAL_MAPPING
+          when: on_fail
+
+
+      # Save test results
+      - store_test_results:
+          path: ./test-queries
+
+      # Save artifacts
+      - store_artifacts:
+          path: ./models.json
+      - store_artifacts:
+          path: ./files.json
+      - store_artifacts:
+          path: ./couchbase.log
+      - store_artifacts:
+          path: ./test-queries
+
+  deploy_release:
+    working_directory: ~/etops/couchbase-cluster-setup
+    parallelism: 1
+    environment:
+      DOCKER_PRIVATE_REPO: etops
+      IMAGE_NAME: couchbase
+    docker:
+      - image: circleci/docker:latest
+
+    steps:
+      - setup_remote_docker
+
+      # Restore workspace data from previous job
+      - attach_workspace:
+          at: ~/
+
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i ~/caches/$IMAGE_NAME.tar
+
+      - deploy:
+          name: Push Docker image
+          command: |
+            docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+            docker tag $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
+            docker tag $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
+            docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_TAG
+            docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:latest
+
+
+  deploy_branch:
+    working_directory: ~/etops/couchbase-cluster-setup
+    parallelism: 1
+    environment:
+      DOCKER_PRIVATE_REPO: etops
+      IMAGE_NAME: couchbase
+    docker:
+      - image: circleci/docker:latest
+
+    steps:
+      - setup_remote_docker
+
+      # Restore workspace data from previous job
+      - attach_workspace:
+          at: ~/
+
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i ~/caches/$IMAGE_NAME.tar
+
+      - deploy:
+          name: Push Docker image
+          command: |
+            docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+            docker tag $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
+            docker tag $IMAGE_NAME:$CIRCLE_BUILD_NUM $DOCKER_PRIVATE_REPO/$IMAGE_NAME:nightly
+            docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:$CIRCLE_BUILD_NUM
+            docker push $DOCKER_PRIVATE_REPO/$IMAGE_NAME:nightly
+
+workflows:
+  version: 2
+  build_test_deploy:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
+      - test:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
+      - deploy_release:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
+      - deploy_branch:
+          requires:
+            - test
+          # filters:
+          #   branches:
+          #     only: master
+
