@@ -37,8 +37,6 @@ jobs:
     environment:
       DOCKER_PRIVATE_REPO: etops
       IMAGE_NAME: couchbase
-      LOCAL_MAPPING: ../../nectar-stack/couchbase/node1
-      VOLUME_MAPPING: ../../nectar-stack/couchbase/node1:/opt/couchbase/var
       ADMIN_LOGIN: admin
       ADMIN_PASSWORD: admin001*
       # WATCH OUT: admin username/password must match dockup below.
@@ -60,6 +58,12 @@ jobs:
           command: |
             set +o pipefail
             docker load -i ~/caches/$IMAGE_NAME.tar
+
+      - run:
+          name: Export env variables
+          command: |
+            echo 'export LOCAL_MAPPING=$( realpath ~/nectar-stack/couchbase/node1 )' >> $BASH_ENV
+            echo 'export VOLUME_MAPPING=${LOCAL_MAPPING}:/opt/couchbase/var' >> $BASH_ENV
 
       - run:
           name: Run etops/dockup:latest
