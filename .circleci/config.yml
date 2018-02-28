@@ -37,6 +37,7 @@ jobs:
     environment:
       DOCKER_PRIVATE_REPO: etops
       IMAGE_NAME: couchbase
+      MAPPING_PATH: ~/nectar-stack/couchbase/node1
       ADMIN_LOGIN: admin
       ADMIN_PASSWORD: admin001*
       # WATCH OUT: admin username/password must match dockup below.
@@ -62,7 +63,8 @@ jobs:
       - run:
           name: Export env variables
           command: |
-            echo 'export LOCAL_MAPPING=$( realpath ~/nectar-stack/couchbase/node1 )' >> $BASH_ENV
+            export LOCAL_MAPPING=$( realpath $MAPPING_PATH )
+            echo 'export LOCAL_MAPPING=$LOCAL_MAPPING' >> $BASH_ENV
             echo 'export VOLUME_MAPPING=${LOCAL_MAPPING}:/opt/couchbase/var' >> $BASH_ENV
 
       - run:
