@@ -62,9 +62,8 @@ jobs:
       - run:
           name: Create directories and export env variables
           command: |
-            export LOCAL_MAPPING=${HOME}/nectar-stack/couchbase/node1
-            echo 'export VOLUME_MAPPING=${LOCAL_MAPPING}:/opt/couchbase/var' >> $BASH_ENV
-            mkdir -p $LOCAL_MAPPING test-queries
+            mkdir -p ${HOME}/nectar-stack/couchbase/node1 test-queries
+            echo 'export VOLUME_MAPPING=${HOME}/nectar-stack/couchbase/node1:/opt/couchbase/var' >> $BASH_ENV
 
       - run:
           name: Run etops/dockup:latest
