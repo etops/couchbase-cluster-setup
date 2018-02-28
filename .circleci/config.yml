@@ -95,7 +95,10 @@ jobs:
 
       - run:
           name: Check if couchbase is reachable
-          command: curl --fail --retry 30 --retry-delay 10 -L -v http://localhost:8091 -C -
+          command: |
+            until curl --fail -L http://localhost:8091 ; do
+              sleep 5
+            done
 
       - run:
           name: Run test queries
