@@ -60,17 +60,16 @@ jobs:
             docker load -i ~/caches/$IMAGE_NAME.tar
 
       - run:
-          name: Export env variables
+          name: Create directories and export env variables
           command: |
-            echo 'export LOCAL_MAPPING=${HOME}/nectar-stack/couchbase/node1' >> $BASH_ENV
-            echo 'export VOLUME_MAPPING=${HOME}/nectar-stack/couchbase/node1:/opt/couchbase/var' >> $BASH_ENV
+            export LOCAL_MAPPING=${HOME}/nectar-stack/couchbase/node1
+            echo 'export VOLUME_MAPPING=${LOCAL_MAPPING}:/opt/couchbase/var' >> $BASH_ENV
+            mkdir -p $LOCAL_MAPPING test-queries
 
       - run:
           name: Run etops/dockup:latest
           command: |
-            mkdir -p $LOCAL_MAPPING test-queries
             echo "Volume mapping $VOLUME_MAPPING"
-            echo "Local mapping $LOCAL_MAPPING"
             docker run \
               -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" \
               -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" \
@@ -97,7 +96,7 @@ jobs:
 
       - run:
           name: Check if couchbase is reachable
-          command: curl --retry 30 --retry-delay 10 -v http://localhost:8091 -C -
+          command: curl --fail --retry 30 --retry-delay 10 -L -v http://localhost:8091 -C -
 
       - run:
           name: Run test queries
@@ -106,7 +105,11 @@ jobs:
           name: Print logs
           command: |
             docker ps
-            docker logs --tail=all couchbase > couchbase.log
+            docker logs couchbase
+          when: on_fail
+      - run:
+          name: List files in $LOCAL_MAPPING
+          command: |
             # Show files that are saved on the volume
             find $LOCAL_MAPPING
           when: on_fail
