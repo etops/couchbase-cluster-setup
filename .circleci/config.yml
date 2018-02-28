@@ -63,7 +63,8 @@ jobs:
       - run:
           name: Export env variables
           command: |
-            export LOCAL_MAPPING=$( realpath $MAPPING_PATH )
+            export LOCAL_MAPPING=$( readlink -f $MAPPING_PATH )
+            echo $LOCAL_MAPPING
             echo 'export LOCAL_MAPPING=$LOCAL_MAPPING' >> $BASH_ENV
             echo 'export VOLUME_MAPPING=${LOCAL_MAPPING}:/opt/couchbase/var' >> $BASH_ENV
 
