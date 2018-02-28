@@ -138,7 +138,7 @@ jobs:
       DOCKER_PRIVATE_REPO: etops
       IMAGE_NAME: couchbase
     docker:
-      - image: circleci/docker:latest
+      - image: docker:latest
 
     steps:
       - setup_remote_docker
@@ -170,7 +170,7 @@ jobs:
       DOCKER_PRIVATE_REPO: etops
       IMAGE_NAME: couchbase
     docker:
-      - image: circleci/docker:latest
+      - image: docker:latest
 
     steps:
       - setup_remote_docker
