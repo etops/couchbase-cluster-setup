@@ -62,9 +62,8 @@ jobs:
       - run:
           name: Export env variables
           command: |
-            export LOCAL_MAPPING=$(pwd)/nectar-stack/couchbase/node1
-            echo 'export LOCAL_MAPPING=$LOCAL_MAPPING' >> $BASH_ENV
-            echo 'export VOLUME_MAPPING=${LOCAL_MAPPING}:/opt/couchbase/var' >> $BASH_ENV
+            echo 'export LOCAL_MAPPING=${HOME}/nectar-stack/couchbase/node1' >> $BASH_ENV
+            echo 'export VOLUME_MAPPING=${HOME}/nectar-stack/couchbase/node1:/opt/couchbase/var' >> $BASH_ENV
 
       - run:
           name: Run etops/dockup:latest
