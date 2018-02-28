@@ -219,7 +219,7 @@ workflows:
       - deploy_branch:
           requires:
             - test
-          # filters:
-          #   branches:
-          #     only: master
+          filters:
+            branches:
+              only: master
 
