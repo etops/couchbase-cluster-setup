@@ -47,7 +47,9 @@ jobs:
     steps:
       - run:
           name: Pull etops/dockup:latest
-          command: docker pull etops/dockup:latest
+          command: |
+            docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+            docker pull etops/dockup:latest
           background: true
 
       - attach_workspace:
