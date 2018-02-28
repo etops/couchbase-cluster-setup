@@ -37,8 +37,8 @@ jobs:
     environment:
       DOCKER_PRIVATE_REPO: etops
       IMAGE_NAME: couchbase
-      LOCAL_MAPPING: /home/ubuntu/nectar-stack/couchbase/node1
-      VOLUME_MAPPING: /home/ubuntu/nectar-stack/couchbase/node1:/opt/couchbase/var
+      LOCAL_MAPPING: ~/nectar-stack/couchbase/node1
+      VOLUME_MAPPING: ~/nectar-stack/couchbase/node1:/opt/couchbase/var
       ADMIN_LOGIN: admin
       ADMIN_PASSWORD: admin001*
       # WATCH OUT: admin username/password must match dockup below.
