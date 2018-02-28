@@ -6,11 +6,6 @@ jobs:
     environment:
       DOCKER_PRIVATE_REPO: etops
       IMAGE_NAME: couchbase
-      LOCAL_MAPPING: /home/ubuntu/nectar-stack/couchbase/node1
-      VOLUME_MAPPING: /home/ubuntu/nectar-stack/couchbase/node1:/opt/couchbase/var
-      ADMIN_LOGIN: admin
-      ADMIN_PASSWORD: admin001*
-      # WATCH OUT: admin username/password must match dockup below.
     docker:
       - image: docker:latest
 
@@ -42,6 +37,11 @@ jobs:
     environment:
       DOCKER_PRIVATE_REPO: etops
       IMAGE_NAME: couchbase
+      LOCAL_MAPPING: /home/ubuntu/nectar-stack/couchbase/node1
+      VOLUME_MAPPING: /home/ubuntu/nectar-stack/couchbase/node1:/opt/couchbase/var
+      ADMIN_LOGIN: admin
+      ADMIN_PASSWORD: admin001*
+      # WATCH OUT: admin username/password must match dockup below.
     machine: true
 
     steps:
@@ -67,12 +67,29 @@ jobs:
             mkdir -p $LOCAL_MAPPING test-queries
             echo "Volume mapping $VOLUME_MAPPING"
             echo "Local mapping $LOCAL_MAPPING"
-            docker run -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" -e "BACKUP_NAME=couchbase" -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" -e "PATHS_TO_BACKUP=/opt/couchbase/var" -e "RESTORE=true" -e "S3_BUCKET_NAME=nectar-circleci" -v $VOLUME_MAPPING etops/dockup:latest
+            docker run \
+              -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" \
+              -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" \
+              -e "BACKUP_NAME=couchbase" \
+              -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" \
+              -e "PATHS_TO_BACKUP=/opt/couchbase/var" \
+              -e "RESTORE=true" \
+              -e "S3_BUCKET_NAME=nectar-circleci" \
+              -v $VOLUME_MAPPING \
+              etops/dockup:latest
 
       - run:
           name: Run couchbase
           command: |
-            docker run --name couchbase -d -e "ADMIN_LOGIN=${ADMIN_LOGIN}" -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" -p 8091:8091 -p 8093:8093 -p 8092:8092 -p 11210:11210 -v $VOLUME_MAPPING $IMAGE_NAME:$CIRCLE_BUILD_NUM
+            docker run --name couchbase -d \
+              -e "ADMIN_LOGIN=${ADMIN_LOGIN}" \
+              -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" \
+              -p 8091:8091 \
+              -p 8093:8093 \
+              -p 8092:8092 \
+              -p 11210:11210 \
+              -v $VOLUME_MAPPING \
+              $IMAGE_NAME:$CIRCLE_BUILD_NUM
 
       - run:
           name: Check if couchbase is reachable
