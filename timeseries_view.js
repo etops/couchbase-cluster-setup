@@ -1,7 +1,7 @@
 // This is just a formatted representation of the view in timeseries_view.ddoc
 // EDITING THIS FILE WILL HAVE NO AFFECT!
 
-// Version 7
+// Version 8
 function (doc, meta) {
   if (doc.active) {
     if (doc._type == 'CustodyAccountPosition') {
@@ -58,5 +58,10 @@ function (doc, meta) {
         emit([doc._type + 'ByDetail'].concat(custodyAccount).concat(idx).concat(realDate), idx);
       }
     }
+  }
+  if (doc._type == 'Transaction' && doc.created != undefined) {
+    var namespace = meta.id.split('::')[0];
+    var created = dateToArray(doc.created).slice(0, 3);
+    emit([doc._type + 'ByCreated'].concat(namespace).concat(created), null);
   }
 }
