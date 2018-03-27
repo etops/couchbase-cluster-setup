@@ -6,6 +6,7 @@ ENV ADMIN_LOGIN $ADMIN_LOGIN
 ENV ADMIN_PASSWORD $ADMIN_PASSWORD
 
 COPY timeseries_view.ddoc /
+COPY timeseries_view_raw.ddoc /
 
 COPY init.sh /
 RUN chmod +x /init.sh
@@ -14,7 +15,7 @@ RUN chmod +x /init.sh
 RUN apt-get update && \
     apt-get install -yq curl && \
     apt-get autoremove && \
-    apt-get clean 
+    apt-get clean
 
 ENTRYPOINT ["/init.sh"]
 
