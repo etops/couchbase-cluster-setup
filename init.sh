@@ -34,9 +34,9 @@ wait_for_healthy() {
     QHOST=$HOST
     QPORT=$PORT
 
-    if [ -n "$MASTER_HOST" ] ; then 
-        QHOST=$MASTER_HOST
-        QPORT=$MASTER_PORT ;
+    if [ -n "$COUCHBASE_MASTER" ] ; then 
+        QHOST=$COUCHBASE_MASTER
+        QPORT=$PORT ;
     fi
 
     while [[ "$status" != *"healthy"* ]]
@@ -64,6 +64,11 @@ if [ -z "$INDEX_RAM_QUOTA" ] ; then
     export INDEX_RAM_QUOTA=256 ;
 fi
 
+if [ -z "$FTS_INDEX_RAM_QUOTA" ] ; then
+    echo "Missing fts index ram quota; setting to 256"
+    export FTS_INDEX_RAM_QUOTA=256 ;
+fi
+
 # Model bucket configuration options.
 # Give this one more memory, so it can cache 
 # more, faster access.
@@ -84,6 +89,11 @@ if [ -z "$RAWDATA_BUCKET_RAMSIZE" ] ; then
    RAWDATA_BUCKET_RAMSIZE=256 ;
 fi
 
+if [ -z "$SERVICES" ] ; then
+   echo "Missing SERVICES, setting them to data,index,query,fts"
+   SERVICES=data,index,query,fts ;
+fi
+
 echo "Type: $TYPE"
 
 # if this node should reach an existing server (a couchbase link is defined)  => env is set by docker compose link
@@ -98,8 +108,10 @@ if [ "$TYPE" = "WORKER" ]; then
     echo "Waiting for slave to be ready..."
     wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $ip:$PORT/pools/default -C -
     
+    curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$HOSTNAME
+    
     echo "Waiting for master to be ready..."
-    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $MASTER_HOST:$MASTER_PORT/pools/default -C -
+    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $COUCHBASE_MASTER:$PORT/pools/default -C -
      
     echo "Adding myself to the cluster, and rebalancing...."    
     # rebalance
@@ -108,14 +120,15 @@ if [ "$TYPE" = "WORKER" ]; then
         --server-add=$ip:$PORT \
         --server-add-username=$ADMIN_LOGIN \
         --server-add-password=$ADMIN_PASSWORD \
-        --services=data,index,query
+        --services=$SERVICES
 
    echo "Listing servers"
    couchbase-cli server-list -c $ip:$PORT \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD"
 
    echo "Waiting until resulting cluster is healthy..."
-   wait_for_healthy
+   # wait_for_healthy
+   echo "add it manually atm"
 else
     echo "Launching Couchbase..."
     /entrypoint.sh couchbase-server &
@@ -124,6 +137,8 @@ else
     # This is not sufficient to know that the cluster is healthy and ready to accept queries,
     # but it indicates the REST API is ready to take configuration settings.
     wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
+    
+    curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$HOSTNAME
     
     # init the cluster
     # It's very important to get these arguments right, because after
@@ -136,8 +151,9 @@ else
         --cluster-port=$PORT \
         --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --cluster-index-ramsize=$INDEX_RAM_QUOTA \
+        --cluster-fts-ramsize=$FTS_INDEX_RAM_QUOTA \
 	    --index-storage-setting=default \
-        --services=data,index,query
+        --services=$SERVICES
   
     # Create bucket for model data
     echo "Creating bucket " $MODEL_BUCKET " ..."
@@ -153,7 +169,6 @@ else
     couchbase-cli bucket-edit -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$MODEL_BUCKET \
-        --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=high
 
      # Create bucket for rawdata data
@@ -170,7 +185,6 @@ else
     couchbase-cli bucket-edit -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$RAWDATA_BUCKET \
-        --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=high     
 
 
