@@ -100,30 +100,30 @@ if [ "$TYPE" = "WORKER" ]; then
     echo "Launching Couchbase Slave Node " $COUCHBASE_NAME " on " $ip
     /entrypoint.sh couchbase-server &
 
-    echo "Waiting for slave to be ready..."
-    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $ip:$PORT/pools/default -C -
+    # echo "Waiting for slave to be ready..."
+    # wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $ip:$PORT/pools/default -C -
     
-    curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$HOSTNAME
+    # curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$HOSTNAME
     
-    echo "Waiting for master to be ready..."
-    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $COUCHBASE_MASTER:$PORT/pools/default -C -
+    # echo "Waiting for master to be ready..."
+    # wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $COUCHBASE_MASTER:$PORT/pools/default -C -
      
-    echo "Adding myself to the cluster, and rebalancing...."    
+    # echo "Adding myself to the cluster, and rebalancing...."    
     # rebalance
-    couchbase-cli server-add -c $COUCHBASE_MASTER:$PORT \
-        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
-        --server-add=$ip:$PORT \
-        --server-add-username=$ADMIN_LOGIN \
-        --server-add-password=$ADMIN_PASSWORD \
-        --services=$SERVICES
+    # couchbase-cli server-add -c $COUCHBASE_MASTER:$PORT \
+    #    -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
+    #    --server-add=$ip:$PORT \
+    #    --server-add-username=$ADMIN_LOGIN \
+    #    --server-add-password=$ADMIN_PASSWORD \
+    #    --services=$SERVICES
 
-   echo "Listing servers"
-   couchbase-cli server-list -c $ip:$PORT \
-        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD"
+    # echo "Listing servers"
+    # couchbase-cli server-list -c $ip:$PORT \
+    #    -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD"
 
-   echo "Waiting until resulting cluster is healthy..."
-   # wait_for_healthy
-   echo "add it manually atm"
+    # echo "Waiting until resulting cluster is healthy..."
+    # wait_for_healthy
+    echo "add worker to the cluster manually atm"
 else
     echo "Launching Couchbase..."
     /entrypoint.sh couchbase-server &
