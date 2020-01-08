@@ -94,7 +94,7 @@ jobs:
               -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" \
               -e "BACKUP_REPO=couchbase" \
               -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" \
-              -e "COUCHBASE_HOST"=localhostlost \
+              -e "COUCHBASE_HOST"=localhost \
               -e "COUCHBASE_USER"=${ADMIN_LOGIN} \
               -e "COUCHBASE_PASSWORD"=${ADMIN_PASSWORD} \
               -e "RESTORE=true" \
