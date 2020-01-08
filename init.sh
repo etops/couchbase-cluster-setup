@@ -86,7 +86,7 @@ fi
 
 if [ -z "$SERVICES" ] ; then
    echo "Missing SERVICES, setting them to data,index,query"
-   SERVICES=data,index,query ;
+   SERVICES=data,index,query,fts ;
 fi
 
 echo "Type: $TYPE"
@@ -163,7 +163,6 @@ else
     couchbase-cli bucket-edit -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$MODEL_BUCKET \
-        --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=high
 
      # Create bucket for rawdata data
@@ -180,7 +179,6 @@ else
     couchbase-cli bucket-edit -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$RAWDATA_BUCKET \
-        --bucket-password="$ADMIN_PASSWORD" \
         --bucket-priority=high     
 
 
@@ -243,19 +241,6 @@ else
     # couchbase-cli rebalance -c $HOST -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
 
     wait_for_healthy
-
-    echo "Creating views..."
-    curl -XPUT \
-        -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" \
-        -H 'Content-Type: application/json' \
-        http://$HOST:8092/$MODEL_BUCKET/_design/timeseries \
-        -d @timeseries_view.ddoc
-
-    curl -XPUT \
-        -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" \
-        -H 'Content-Type: application/json' \
-        http://$HOST:8092/$RAWDATA_BUCKET/_design/timeseries \
-        -d @timeseries_view_raw.ddoc
 
     echo "Finished with cluster setup/config."
     echo `date`

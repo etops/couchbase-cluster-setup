@@ -4,6 +4,7 @@ couchbase-init:
         - "8091:8091"
         - "8092:8092"
         - "8093:8093"
+        - "8094:8094"
         - "11210:11210"
     environment:
         - CLUSTER_RAM_QUOTA=1024

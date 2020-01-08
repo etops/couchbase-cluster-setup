@@ -87,8 +87,9 @@ jobs:
               -e "ADMIN_LOGIN=${ADMIN_LOGIN}" \
               -e "ADMIN_PASSWORD=${ADMIN_PASSWORD}" \
               -p 8091:8091 \
-              -p 8093:8093 \
               -p 8092:8092 \
+              -p 8093:8093 \
+              -p 8094:8094 \
               -p 11210:11210 \
               -v $VOLUME_MAPPING \
               $IMAGE_NAME
