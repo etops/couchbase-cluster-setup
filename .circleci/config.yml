@@ -66,21 +66,6 @@ jobs:
             echo 'export VOLUME_MAPPING=${HOME}/nectar-stack/couchbase/node1:/opt/couchbase/var' >> $BASH_ENV
 
       - run:
-          name: Run etops/dockup:latest
-          command: |
-            echo "Volume mapping $VOLUME_MAPPING"
-            docker run \
-              -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" \
-              -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" \
-              -e "BACKUP_NAME=couchbase" \
-              -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" \
-              -e "PATHS_TO_BACKUP=/opt/couchbase/var" \
-              -e "RESTORE=true" \
-              -e "S3_BUCKET_NAME=nectar-circleci" \
-              -v $VOLUME_MAPPING \
-              etops/dockup:latest
-
-      - run:
           name: Run couchbase
           command: |
             docker run --name couchbase -d \
@@ -100,6 +85,21 @@ jobs:
             until curl --fail -L http://localhost:8091 ; do
               sleep 5
             done
+
+      - run:
+          name: Run etops/dockup:latest
+          command: |
+            docker run \
+              -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" \
+              -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" \
+              -e "BACKUP_REPO=couchbase" \
+              -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" \
+              -e "COUCHBASE_HOST"=localhostlost \
+              -e "COUCHBASE_USER"=${ADMIN_LOGIN} \
+              -e "COUCHBASE_PASSWORD"=${ADMIN_PASSWORD} \
+              -e "RESTORE=true" \
+              -e "S3_BUCKET_NAME=nectar-circleci" \
+              etops/dockup:32
 
       - run:
           name: Run test queries
