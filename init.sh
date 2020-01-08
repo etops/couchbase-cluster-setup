@@ -64,6 +64,11 @@ if [ -z "$INDEX_RAM_QUOTA" ] ; then
     export INDEX_RAM_QUOTA=256 ;
 fi
 
+if [ -z "$FTS_INDEX_RAM_QUOTA" ] ; then
+    echo "Missing fts index ram quota; setting to 256"
+    export FTS_INDEX_RAM_QUOTA=256 ;
+fi
+
 # Model bucket configuration options.
 # Give this one more memory, so it can cache 
 # more, faster access.
@@ -85,7 +90,7 @@ if [ -z "$RAWDATA_BUCKET_RAMSIZE" ] ; then
 fi
 
 if [ -z "$SERVICES" ] ; then
-   echo "Missing SERVICES, setting them to data,index,query"
+   echo "Missing SERVICES, setting them to data,index,query,fts"
    SERVICES=data,index,query,fts ;
 fi
 
@@ -146,6 +151,7 @@ else
         --cluster-port=$PORT \
         --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --cluster-index-ramsize=$INDEX_RAM_QUOTA \
+        --cluster-fts-ramsize=$FTS_INDEX_RAM_QUOTA \
 	    --index-storage-setting=default \
         --services=$SERVICES
   
