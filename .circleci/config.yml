@@ -100,13 +100,13 @@ jobs:
             docker run \
               -e "AWS_ACCESS_KEY_ID=${EXO_AWS_ACCESS_KEY_ID}" \
               -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" \
-              -e "BACKUP_REPO=couchbase" \
+              -e "BACKUP_REPO=masterdb" \
               -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" \
               -e "COUCHBASE_HOST"=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1) \
               -e "COUCHBASE_USER"=${ADMIN_LOGIN} \
               -e "COUCHBASE_PASSWORD"=${ADMIN_PASSWORD} \
               -e "RESTORE=true" \
-              -e "S3_BUCKET_NAME=nectar-circleci" \
+              -e "S3_BUCKET_NAME=couchbase-build-testset" \
               docker.pkg.github.com/etops/dockup/dockup:32
 
       - run:
