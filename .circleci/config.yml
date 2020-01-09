@@ -102,7 +102,7 @@ jobs:
               -e "AWS_SECRET_ACCESS_KEY=${EXO_AWS_SECRET_ACCESS_KEY}" \
               -e "BACKUP_REPO=masterdb" \
               -e "BACKUP_PASSWORD=${BACKUP_PASSWORD}" \
-              -e "COUCHBASE_HOST"=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1) \
+              -e "COUCHBASE_HOST"=localhost \
               -e "COUCHBASE_USER"=${ADMIN_LOGIN} \
               -e "COUCHBASE_PASSWORD"=${ADMIN_PASSWORD} \
               -e "RESTORE=true" \
