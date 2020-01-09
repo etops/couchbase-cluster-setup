@@ -91,9 +91,7 @@ jobs:
           command: |
             curl -v http://localhost:8093/query/service \
               -d "statement=CREATE PRIMARY INDEX \`primary\` ON \`models\` USING GSI" \
-              -u ${ADMIN_LOGIN}:${ADMIN_PASSWORD} > indexResponse.txt
-            cat indexResponse.txt
-            grep -q success indexResponse.txt
+              -u ${ADMIN_LOGIN}:${ADMIN_PASSWORD}
 
       - run:
           name: Run etops/dockup:latest
