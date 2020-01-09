@@ -90,7 +90,7 @@ jobs:
           name: create primary index
           command: |
             curl -v http://localhost:8093/query/service \
-              -d "statement=CREATE PRIMARY INDEX `primary` ON `models` USING GSI" \
+              -d "statement=CREATE PRIMARY INDEX `primary` ON `models`" \
               -u ${ADMIN_LOGIN}:${ADMIN_PASSWORD}
 
       - run:
