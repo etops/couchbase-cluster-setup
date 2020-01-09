@@ -120,7 +120,7 @@ jobs:
           name: Run test queries
           command: |
             ./test/test-queries.sh
-            grep -q SomeString ./test-queries/portfolios.json
+            grep -q '"$1": 3' ./test-queries/portfolios.json
 
       - run:
           name: Print logs
