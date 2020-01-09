@@ -110,6 +110,13 @@ jobs:
               etops/dockup:34
 
       - run:
+          name: build primary index
+          command: |
+            curl -v http://localhost:8093/query/service \
+              -d "statement=BUILD INDEX ON \`models\`(\`primary\`) USING GSI" \
+              -u ${ADMIN_LOGIN}:${ADMIN_PASSWORD}
+
+      - run:
           name: Run test queries
           command: |
             ./test/test-queries.sh
