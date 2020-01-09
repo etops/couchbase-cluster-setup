@@ -44,10 +44,10 @@ jobs:
 
     steps:
       - run:
-          name: Pull etops/dockup:latest
+          name: Pull etops/dockup:33
           command: |
-            docker login -u $GITHUB_USERNAME -p $GITHUB_ACCESS_TOKEN docker.pkg.github.com
-            docker pull docker.pkg.github.com/etops/dockup/dockup:32
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker pull etops/dockup:33
           background: true
 
       - attach_workspace:
@@ -94,7 +94,7 @@ jobs:
               -u ${ADMIN_LOGIN}:${ADMIN_PASSWORD}
 
       - run:
-          name: Run etops/dockup:latest
+          name: Run etops/dockup:33
           command: |
             echo $(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1)
             docker run \
@@ -107,7 +107,7 @@ jobs:
               -e "COUCHBASE_PASSWORD"=${ADMIN_PASSWORD} \
               -e "RESTORE=true" \
               -e "S3_BUCKET_NAME=couchbase-build-testset" \
-              docker.pkg.github.com/etops/dockup/dockup:32
+              etops/dockup:33
 
       - run:
           name: Run test queries
