@@ -5,14 +5,15 @@ LABEL MAINTAINER="Etops AG"
 ENV ADMIN_LOGIN $ADMIN_LOGIN
 ENV ADMIN_PASSWORD $ADMIN_PASSWORD
 
-COPY init.sh /
-RUN chmod +x /init.sh
-
 # Curl is needed as a diagnostic tool during build.
 RUN apt-get update && \
     apt-get install -yq curl && \
     apt-get autoremove && \
     apt-get clean 
+
+
+COPY init.sh /
+RUN chmod +x /init.sh
 
 ENTRYPOINT ["/init.sh"]
 

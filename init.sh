@@ -15,6 +15,16 @@ env
 
 echo "==============================================================="
 
+if [ -z "$ADMIN_LOGIN" ] ; then
+   echo "Missing ADMIN_LOGIN"
+   exit 1
+fi
+
+if [ -z "$ADMIN_PASSWORD" ] ; then
+   echo "Missing ADMIN_PASSWORD"
+   exit 1
+fi
+
 HOST=localhost
 PORT=8091
 
@@ -69,6 +79,16 @@ if [ -z "$FTS_INDEX_RAM_QUOTA" ] ; then
     export FTS_INDEX_RAM_QUOTA=256 ;
 fi
 
+if [ -z "$EVENTING_RAM_QUOTA" ] ; then
+    echo "Missing eventing ram quota; setting to 256"
+    export EVENTING_RAM_QUOTA=0 ;
+fi
+
+if [ -z "$ANALYTICS_INDEX_RAM_QUOTA" ] ; then
+    echo "Missing analytics index ram quota; setting to 256"
+    export ANALYTICS_INDEX_RAM_QUOTA=0 ;
+fi
+
 # Model bucket configuration options.
 # Give this one more memory, so it can cache 
 # more, faster access.
@@ -100,6 +120,7 @@ echo "Type: $TYPE"
 if [ "$TYPE" = "WORKER" ]; then
     #IP=`hostname -s`
     ip=`hostname -I | cut -d ' ' -f1`
+
     echo "ip: " $ip
 
     echo "Launching Couchbase Slave Node " $COUCHBASE_NAME " on " $ip
@@ -137,21 +158,35 @@ else
     # This is not sufficient to know that the cluster is healthy and ready to accept queries,
     # but it indicates the REST API is ready to take configuration settings.
     wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
+
+    ip=`hostname -I | cut -d ' ' -f1`
+
+    echo "ip: " $ip
+    echo $HOSTNAME
+
+    # Initialize Node
+    echo "Initialize Node"
+    curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/nodes/self/controller/settings
     
-    curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$HOSTNAME
+    # Rename Node
+    echo "Rename Node"
+    curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$ip
     
     # init the cluster
     # It's very important to get these arguments right, because after
     # a cluster is provisioned, some parameters (like services) cannot
     # be changed.
     echo "Initializing cluster configuration ..."
-    couchbase-cli cluster-init -c $HOST:8091 \
+    
+    couchbase-cli cluster-init --cluster $HOST:$PORT \
         --cluster-username="$ADMIN_LOGIN" \
         --cluster-password="$ADMIN_PASSWORD" \
         --cluster-port=$PORT \
         --cluster-ramsize=$CLUSTER_RAM_QUOTA \
         --cluster-index-ramsize=$INDEX_RAM_QUOTA \
         --cluster-fts-ramsize=$FTS_INDEX_RAM_QUOTA \
+        --cluster-eventing-ramsize=$EVENTING_RAM_QUOTA \
+        --cluster-analytics-ramsize=$ANALYTICS_INDEX_RAM_QUOTA \
 	    --index-storage-setting=default \
         --services=$SERVICES
   
