@@ -81,11 +81,7 @@ jobs:
 
       - run:
           name: Check if couchbase is reachable
-          command: |
-            until curl --fail -L http://localhost:8091 ; do
-              sleep 5
-            done
-            sleep 30
+          command: ./wait-for-couchbase.sh
 
       - run:
           name: create primary index
