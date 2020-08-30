@@ -1,4 +1,4 @@
-FROM couchbase/server:enterprise-6.5.1
+FROM couchbase/server:enterprise-6.6.0
 
 LABEL MAINTAINER="Etops AG"
 

@@ -81,7 +81,7 @@ jobs:
 
       - run:
           name: Check if couchbase is reachable
-          command: ./wait-for-couchbase.sh
+          command: ./test/wait_for_health.sh
 
       - run:
           name: create primary index
