@@ -123,18 +123,28 @@ echo "Type: $TYPE"
 
 # if this node should reach an existing server (a couchbase link is defined)  => env is set by docker compose link
 if [ "$TYPE" = "WORKER" ]; then
-    #IP=`hostname -s`
-    ip=`hostname -I | cut -d ' ' -f1`
-
-    echo "ip: " $ip
-
     echo "Launching Couchbase Slave Node " $COUCHBASE_NAME " on " $ip
     /entrypoint.sh couchbase-server &
 
     # echo "Waiting for slave to be ready..."
-    # wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $ip:$PORT/pools/default -C -
-    
-    # curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$HOSTNAME
+    wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $ip:$PORT/pools/default -C -
+
+    if [ "$LOCAL_MODE" = "false" ]; then
+        echo "!!! THIS SETUP DOESN'T WORK ON LOCAL DOCKER!!!"
+        echo "getting IP and setting it as new hostname"
+        
+        ip=`hostname -I | cut -d ' ' -f1`
+
+        echo "ip: " $ip
+        # this doens't work with couchbase 6.5+ on a local docker setup
+        # it has to be 127.0.0.1 not the internal docker ip (internal docker ip is usually not accessible form the local machine)
+        # on the other side we need this in a multi machine environment where index, query and data services are on different machines
+        # couchbase sends there IP, so it can't be 127.0.0.1 for all of them
+        # Rename Node
+        echo "Rename Node"
+        curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$ip
+
+    fi
     
     # echo "Waiting for master to be ready..."
     # wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $COUCHBASE_MASTER:$PORT/pools/default -C -
