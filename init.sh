@@ -25,6 +25,11 @@ if [ -z "$ADMIN_PASSWORD" ] ; then
    exit 1
 fi
 
+if [ -z "$LOCAL_MODE" ] ; then
+   LOCAL_MODE="false"
+   echo "LOCAL_MODE not set, setting it to false, this might not work on a local docker environment!"
+fi
+
 HOST=localhost
 PORT=8091
 
@@ -159,19 +164,29 @@ else
     # but it indicates the REST API is ready to take configuration settings.
     wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
 
-    ip=`hostname -I | cut -d ' ' -f1`
-
-    echo "ip: " $ip
-    echo $HOSTNAME
+    
 
     # Initialize Node
     echo "Initialize Node"
     curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/nodes/self/controller/settings
+
+    if [ "$LOCAL_MODE" = "false" ]; then
+        echo "!!! THIS SETUP DOESN'T WORK ON LOCAL DOCKER!!!"
+        echo "getting IP and setting it as new hostname"
     
-    # Rename Node
-    echo "Rename Node"
-    curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$ip
-    
+        ip=`hostname -I | cut -d ' ' -f1`
+
+        echo "ip: " $ip
+        # this doens't work with couchbase 6.5+ on a local docker setup
+        # it has to be 127.0.0.1 not the internal docker ip (internal docker ip is usually not accessible form the local machine)
+        # on the other side we need this in a multi machine environment where index, query and data services are on different machines
+        # couchbase sends there IP, so it can't be 127.0.0.1 for all of them
+        # Rename Node
+        echo "Rename Node"
+        curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$ip
+
+    fi
+
     # init the cluster
     # It's very important to get these arguments right, because after
     # a cluster is provisioned, some parameters (like services) cannot
