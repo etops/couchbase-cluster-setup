@@ -94,6 +94,16 @@ if [ -z "$ANALYTICS_INDEX_RAM_QUOTA" ] ; then
     export ANALYTICS_INDEX_RAM_QUOTA=0 ;
 fi
 
+# Ephemeral bucket configuration options.
+# Does not need much memory as it will take over 
+# for redis in some instances.
+EPHEMERAL_BUCKET=ephemeral
+
+if [ -z "$EPHEMERAL_BUCKET_RAMSIZE" ] ; then
+   echo "Missing ephemeral bucket ramsize; setting to 256"
+   EPHEMERAL_BUCKET_RAMSIZE=256 ;
+fi
+
 # Model bucket configuration options.
 # Give this one more memory, so it can cache 
 # more, faster access.
@@ -245,8 +255,17 @@ else
     couchbase-cli bucket-edit -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$RAWDATA_BUCKET \
-        --bucket-priority=high     
+        --bucket-priority=high   
 
+     # Create ephermeral bucket
+    echo "Creating bucket " $EPHEMERAL_BUCKET " ..."
+    couchbase-cli bucket-create -c $HOST \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
+        --bucket=$EPHEMERAL_BUCKET \
+        --bucket-type=ephemeral \
+        --bucket-ramsize=$EPHEMERAL_BUCKET_RAMSIZE \
+        --bucket-eviction-policy=nruEviction \
+        --wait   
 
     echo "Configuring index settings..."
     couchbase-cli setting-index -c $HOST \
