@@ -1,11 +1,13 @@
 #!/bin/bash
 #
 # This script configures the couchbase cluster for running.
-# 
+#
 # It uses the couchbase command line tool, docs here:
+# TODO link is out of date
 # http://developer.couchbase.com/documentation/server/current/cli/cbcli-intro.html
 #
 # Which buckets, how much RAM -- necessary docs are in Sizing Guidelines
+# TODO link is out of date
 # http://developer.couchbase.com/documentation/server/current/install/sizing-general.html
 #
 #
@@ -49,7 +51,7 @@ wait_for_healthy() {
     QHOST=$HOST
     QPORT=$PORT
 
-    if [ -n "$COUCHBASE_MASTER" ] ; then 
+    if [ -n "$COUCHBASE_MASTER" ] ; then
         QHOST=$COUCHBASE_MASTER
         QPORT=$PORT ;
     fi
@@ -58,8 +60,8 @@ wait_for_healthy() {
     do
         echo "=========================================================="
         echo "Waiting on couchbase to finish setup and become healthy..."
-        
-        # Nasty way to parse json with sed rather than installing 
+
+        # Nasty way to parse json with sed rather than installing
         # extra tools in the VM for this one tiny thing.
         status=`curl -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://$QHOST:$QPORT/pools/default 2>/dev/null | sed 's/.*status\"://g' | sed 's/,.*//'`
         echo "Cluster status " $status `date`
@@ -71,7 +73,7 @@ wait_for_healthy() {
 
 if [ -z "$CLUSTER_RAM_QUOTA" ] ; then
     echo "Missing cluster ram quota, setting to 1024"
-    export CLUSTER_RAM_QUOTA=1024 ; 
+    export CLUSTER_RAM_QUOTA=1024 ;
 fi
 
 if [ -z "$INDEX_RAM_QUOTA" ] ; then
@@ -86,16 +88,24 @@ fi
 
 if [ -z "$EVENTING_RAM_QUOTA" ] ; then
     echo "Missing eventing ram quota; setting to 256"
-    export EVENTING_RAM_QUOTA=0 ;
+    export EVENTING_RAM_QUOTA=256 ;
 fi
 
 if [ -z "$ANALYTICS_INDEX_RAM_QUOTA" ] ; then
-    echo "Missing analytics index ram quota; setting to 256"
+    echo "Missing analytics index ram quota; setting to 0"
     export ANALYTICS_INDEX_RAM_QUOTA=0 ;
 fi
 
+# Eventing bucket should be used for eventing metadata
+EVENTING_BUCKET=eventing
+
+if [ -z "$EVENTING_BUCKET_RAMSIZE" ] ; then
+   echo "Missing eventing bucket ramsize; setting to 256"
+   EVENTING_BUCKET_RAMSIZE=256 ;
+fi
+
 # Ephemeral bucket configuration options.
-# Does not need much memory as it will take over 
+# Does not need much memory as it will take over
 # for redis in some instances.
 EPHEMERAL_BUCKET=ephemeral
 
@@ -105,7 +115,7 @@ if [ -z "$EPHEMERAL_BUCKET_RAMSIZE" ] ; then
 fi
 
 # Model bucket configuration options.
-# Give this one more memory, so it can cache 
+# Give this one more memory, so it can cache
 # more, faster access.
 MODEL_BUCKET=models
 
@@ -115,7 +125,7 @@ if [ -z "$MODEL_BUCKET_RAMSIZE" ] ; then
 fi
 
 # Rawdata bucket configuration options.
-# Memory can be much lower because it's not important to 
+# Memory can be much lower because it's not important to
 # keep a resident set in memory for fast query/access.
 RAWDATA_BUCKET=rawdata
 
@@ -125,8 +135,8 @@ if [ -z "$RAWDATA_BUCKET_RAMSIZE" ] ; then
 fi
 
 if [ -z "$SERVICES" ] ; then
-   echo "Missing SERVICES, setting them to data,index,query,fts"
-   SERVICES=data,index,query,fts ;
+   echo "Missing SERVICES, setting them to data,index,query,fts,eventing"
+   SERVICES=data,index,query,fts,eventing ;
 fi
 
 echo "Type: $TYPE"
@@ -142,7 +152,7 @@ if [ "$TYPE" = "WORKER" ]; then
     if [ "$LOCAL_MODE" = "false" ]; then
         echo "!!! THIS SETUP DOESN'T WORK ON LOCAL DOCKER!!!"
         echo "getting IP and setting it as new hostname"
-        
+
         ip=`hostname -I | cut -d ' ' -f1`
 
         echo "ip: " $ip
@@ -155,11 +165,11 @@ if [ "$TYPE" = "WORKER" ]; then
         curl -v -X POST -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" http://127.0.0.1:$PORT/node/controller/rename -d hostname=$ip
 
     fi
-    
+
     # echo "Waiting for master to be ready..."
     # wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $COUCHBASE_MASTER:$PORT/pools/default -C -
-     
-    # echo "Adding myself to the cluster, and rebalancing...."    
+
+    # echo "Adding myself to the cluster, and rebalancing...."
     # rebalance
     # couchbase-cli server-add -c $COUCHBASE_MASTER:$PORT \
     #    -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
@@ -184,7 +194,7 @@ else
     # but it indicates the REST API is ready to take configuration settings.
     wait_for_success curl --silent -u "$ADMIN_LOGIN:$ADMIN_PASSWORD" $HOST:$PORT/pools/default -C -
 
-    
+
 
     # Initialize Node
     echo "Initialize Node"
@@ -193,7 +203,7 @@ else
     if [ "$LOCAL_MODE" = "false" ]; then
         echo "!!! THIS SETUP DOESN'T WORK ON LOCAL DOCKER!!!"
         echo "getting IP and setting it as new hostname"
-    
+
         ip=`hostname -I | cut -d ' ' -f1`
 
         echo "ip: " $ip
@@ -212,7 +222,7 @@ else
     # a cluster is provisioned, some parameters (like services) cannot
     # be changed.
     echo "Initializing cluster configuration ..."
-    
+
     couchbase-cli cluster-init --cluster $HOST:$PORT \
         --cluster-username="$ADMIN_LOGIN" \
         --cluster-password="$ADMIN_PASSWORD" \
@@ -224,7 +234,7 @@ else
         --cluster-analytics-ramsize=$ANALYTICS_INDEX_RAM_QUOTA \
 	    --index-storage-setting=default \
         --services=$SERVICES
-  
+
     # Create bucket for model data
     echo "Creating bucket " $MODEL_BUCKET " ..."
     couchbase-cli bucket-create -c $HOST \
@@ -232,7 +242,7 @@ else
         --bucket=$MODEL_BUCKET \
         --bucket-type=couchbase \
         --bucket-ramsize=$MODEL_BUCKET_RAMSIZE \
-        --wait 
+        --wait
 
     # Set model bucket to be high priority
     echo "Setting " $MODEL_BUCKET " bucket to be high priority..."
@@ -248,14 +258,14 @@ else
         --bucket=$RAWDATA_BUCKET \
         --bucket-type=couchbase \
         --bucket-ramsize=$RAWDATA_BUCKET_RAMSIZE \
-        --wait 
+        --wait
 
     # Set rawdata bucket to be high priority
     echo "Setting " $RAWDATA_BUCKET " bucket to be high priority..."
     couchbase-cli bucket-edit -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --bucket=$RAWDATA_BUCKET \
-        --bucket-priority=high   
+        --bucket-priority=high
 
      # Create ephermeral bucket
     echo "Creating bucket " $EPHEMERAL_BUCKET " ..."
@@ -265,14 +275,23 @@ else
         --bucket-type=ephemeral \
         --bucket-ramsize=$EPHEMERAL_BUCKET_RAMSIZE \
         --bucket-eviction-policy=nruEviction \
-        --wait   
+        --wait
+
+    # Create eventing bucket
+    echo "Creating bucket " $EVENTING_BUCKET " ..."
+    couchbase-cli bucket-create -c $HOST \
+        -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
+        --bucket=$EVENTING_BUCKET \
+        --bucket-type=couchbase \
+        --bucket-ramsize=$EVENTING_BUCKET_RAMSIZE \
+        --wait
 
     echo "Configuring index settings..."
     couchbase-cli setting-index -c $HOST \
         -u "$ADMIN_LOGIN" -p "$ADMIN_PASSWORD" \
         --index-max-rollback-points=5 \
         --index-memory-snapshot-interval=200 \
-        --index-threads=2    
+        --index-threads=2
 
 
     # For debug purposes in logs, show buckets.
@@ -321,7 +340,7 @@ else
     # Rebalancing could also be done here, but then a killed container doesn't rebalance automatically
     # wait for other node to connect to the cluster
     #sleep 10
-    
+
     # rebalance
     # couchbase-cli rebalance -c $HOST -u $ADMIN_LOGIN -p $ADMIN_PASSWORD
 
@@ -330,5 +349,5 @@ else
     echo "Finished with cluster setup/config."
     echo `date`
 fi
-        
+
 wait

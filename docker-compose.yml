@@ -5,6 +5,7 @@ couchbase-init:
         - "8092:8092"
         - "8093:8093"
         - "8094:8094"
+        - "8096:8096"
         - "11210:11210"
     environment:
         - CLUSTER_RAM_QUOTA=1024
@@ -17,10 +18,10 @@ couchbase-init:
 #     build: .
 #     links:
 #         - couchbase-init:couchbase
-#     environment: 
+#     environment:
 #         - CLUSTER_RAM_QUOTA=1024
 #         - ADMIN_LOGIN
 #         - ADMIN_PASSWORD
 #     restart: always
-    
-    
+
+
